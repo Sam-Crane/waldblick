@@ -117,7 +117,8 @@ export type NotificationKind =
   | 'task_assigned'
   | 'message'
   | 'connection_request'
-  | 'sync_issue';
+  | 'sync_issue'
+  | 'user_joined';
 
 export type AppNotification = {
   id: string;

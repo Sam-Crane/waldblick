@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import TopBar from '@/components/Layout/TopBar';
 import { useCurrentUser, initials } from '@/data/currentUser';
 import { useSession } from '@/data/session';
-import { connectionsRepo } from '@/data/connectionsRepo';
+import { connectionsRepo, type DiscoverableUser } from '@/data/connectionsRepo';
 import { messagingRepo } from '@/data/messagingRepo';
+import { useToast } from '@/components/Toast';
 import type { Connection } from '@/data/types';
 import { useTranslation } from '@/i18n';
 
@@ -13,6 +14,7 @@ type ConnWithOther = Connection & { other: { id: string; name: string | null; ro
 export default function Connect() {
   const t = useTranslation();
   const navigate = useNavigate();
+  const toast = useToast();
   const { isDemoMode } = useSession();
   const me = useCurrentUser();
 
@@ -21,6 +23,15 @@ export default function Connect() {
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | undefined>();
   const [busy, setBusy] = useState(false);
   const [list, setList] = useState<ConnWithOther[]>([]);
+  const [discover, setDiscover] = useState<DiscoverableUser[]>([]);
+  const [discoverLoading, setDiscoverLoading] = useState(false);
+
+  const loadDiscover = async () => {
+    setDiscoverLoading(true);
+    const users = await connectionsRepo.discoverUsers();
+    setDiscover(users);
+    setDiscoverLoading(false);
+  };
 
   useEffect(() => {
     if (isDemoMode) {
@@ -29,6 +40,7 @@ export default function Connect() {
     }
     void connectionsRepo.myInviteCode().then((c) => c && setMyCode(c));
     void connectionsRepo.listWithProfiles().then(setList);
+    void loadDiscover();
   }, [isDemoMode, me.id, me.name]);
 
   const copy = async () => {
@@ -62,6 +74,18 @@ export default function Connect() {
     setMessage({ tone: 'ok', text: t('connect.requestSent', { code: result.contact.name ?? code }) });
     setCode('');
     void connectionsRepo.listWithProfiles().then(setList);
+    void loadDiscover();
+  };
+
+  const requestFromDiscover = async (u: DiscoverableUser) => {
+    const res = await connectionsRepo.sendRequestById(u.id);
+    if (res.ok) {
+      toast.success(t('connect.requestSent', { code: u.name ?? u.inviteCode ?? '' }));
+      void connectionsRepo.listWithProfiles().then(setList);
+      void loadDiscover();
+    } else {
+      toast.error(t(`connect.err.${res.error}`));
+    }
   };
 
   const accept = async (c: ConnWithOther) => {
@@ -206,6 +230,70 @@ export default function Connect() {
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {/* Discover users — everyone on the app you haven't connected with yet */}
+        {!isDemoMode && (
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-label-sm uppercase tracking-widest text-outline">
+                {t('connect.discover')}
+              </h2>
+              <button
+                onClick={loadDiscover}
+                disabled={discoverLoading}
+                className="text-label-sm font-semibold text-primary-container disabled:opacity-50"
+                aria-label={t('connect.refresh')}
+              >
+                <span className={`material-symbols-outlined text-[18px] ${discoverLoading ? 'animate-spin' : ''}`}>
+                  refresh
+                </span>
+              </button>
+            </div>
+            {discover.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-outline-variant p-4 text-center text-label-md text-on-surface-variant">
+                {discoverLoading ? t('connect.loading') : t('connect.noDiscover')}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {discover.map((u) => {
+                  const joinedRecently = Date.now() - new Date(u.createdAt).getTime() < 7 * 24 * 60 * 60 * 1000;
+                  return (
+                    <li
+                      key={u.id}
+                      className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary text-label-sm font-bold">
+                          {initials(u.name ?? u.inviteCode ?? '?')}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="flex items-center gap-2 truncate text-label-md font-semibold">
+                            {u.name ?? '—'}
+                            {joinedRecently && (
+                              <span className="rounded-full bg-tertiary-fixed-dim px-2 text-[10px] font-bold uppercase tracking-wider text-on-tertiary-fixed">
+                                {t('connect.newTag')}
+                              </span>
+                            )}
+                          </p>
+                          <p className="truncate text-label-sm text-outline">
+                            {t(`role.${u.role}`)}
+                            {u.forestName && ` · ${u.forestName}`}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => requestFromDiscover(u)}
+                        className="touch-safe shrink-0 rounded-lg bg-primary px-3 text-label-sm font-semibold uppercase tracking-widest text-on-primary active:scale-95"
+                      >
+                        {t('connect.connect')}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </section>
         )}
 

@@ -3,6 +3,15 @@ import type { Connection } from './types';
 
 type ProfileRow = { id: string; name: string | null; invite_code: string; role: string };
 
+export type DiscoverableUser = {
+  id: string;
+  name: string | null;
+  role: string;
+  inviteCode: string | null;
+  forestName: string | null;
+  createdAt: string;
+};
+
 type RemoteConn = {
   id: string;
   requester_id: string;
@@ -70,6 +79,51 @@ export const connectionsRepo = {
     const { data, error } = await supabase.from('connections').select('*');
     if (error || !data) return [];
     return (data as RemoteConn[]).map(toDomain);
+  },
+
+  // Profiles of other app users, excluding the current user and anyone
+  // we already have a connection with in any state. Newest first.
+  async discoverUsers(limit = 50): Promise<DiscoverableUser[]> {
+    if (!hasSupabase || !supabase) return [];
+    const { data: session } = await supabase.auth.getSession();
+    const me = session.session?.user.id;
+    if (!me) return [];
+
+    const conns = await this.list();
+    const connected = new Set<string>([me]);
+    for (const c of conns) {
+      connected.add(c.requesterId === me ? c.addresseeId : c.requesterId);
+    }
+
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, name, role, invite_code, forest_name, created_at')
+      .order('created_at', { ascending: false })
+      .limit(Math.max(limit * 4, 100));
+    return (data ?? [])
+      .filter((p) => !connected.has(p.id as string))
+      .slice(0, limit)
+      .map((p) => ({
+        id: p.id as string,
+        name: (p.name as string | null) ?? null,
+        role: (p.role as string) ?? 'forester',
+        inviteCode: (p.invite_code as string | null) ?? null,
+        forestName: (p.forest_name as string | null) ?? null,
+        createdAt: p.created_at as string,
+      }));
+  },
+
+  async sendRequestById(addresseeId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    if (!hasSupabase || !supabase) return { ok: false, error: 'supabase_missing' };
+    const { data: session } = await supabase.auth.getSession();
+    const userId = session.session?.user.id;
+    if (!userId) return { ok: false, error: 'not_authenticated' };
+    if (addresseeId === userId) return { ok: false, error: 'cannot_connect_self' };
+    const { error } = await supabase
+      .from('connections')
+      .insert({ requester_id: userId, addressee_id: addresseeId, status: 'pending' });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
   },
 
   // Look up the "other" party's profile for each connection in one round-trip.

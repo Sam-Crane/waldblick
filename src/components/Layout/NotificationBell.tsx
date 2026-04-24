@@ -12,6 +12,7 @@ const ICON_FOR: Record<NotificationKind, string> = {
   message: 'chat',
   connection_request: 'person_add',
   sync_issue: 'cloud_off',
+  user_joined: 'group_add',
 };
 
 const ACCENT_FOR: Record<NotificationKind, string> = {
@@ -20,6 +21,7 @@ const ACCENT_FOR: Record<NotificationKind, string> = {
   message: 'text-primary-container',
   connection_request: 'text-tertiary',
   sync_issue: 'text-secondary',
+  user_joined: 'text-tertiary-fixed-dim',
 };
 
 export default function NotificationBell({ variant = 'light' }: { variant?: 'light' | 'dark' }) {

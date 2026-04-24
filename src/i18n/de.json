@@ -262,6 +262,11 @@
     "accept": "Annehmen",
     "contacts": "Kontakte",
     "chat": "Chat",
+    "discover": "Andere Nutzer",
+    "loading": "Wird geladen…",
+    "noDiscover": "Zur Zeit sind keine weiteren Nutzer verfügbar.",
+    "newTag": "Neu",
+    "refresh": "Aktualisieren",
     "outgoingPending": "{n} ausgehende Anfragen warten auf Annahme.",
     "err": {
       "supabase_missing": "Supabase ist nicht konfiguriert.",

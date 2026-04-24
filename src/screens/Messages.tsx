@@ -1,12 +1,69 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import TopBar from '@/components/Layout/TopBar';
-import { CONVERSATIONS, contactById } from '@/data/mocks';
-import { initials } from '@/data/currentUser';
+import { CONVERSATIONS as MOCK_CONVERSATIONS, contactById as mockContactById } from '@/data/mocks';
+import { useCurrentUser, initials } from '@/data/currentUser';
+import { useSession } from '@/data/session';
+import { messagingRepo } from '@/data/messagingRepo';
+import type { Conversation } from '@/data/types';
+import { supabase, hasSupabase } from '@/data/supabase';
 import { useTranslation } from '@/i18n';
+
+type Preview = {
+  id: string;
+  otherId: string;
+  otherName: string;
+  otherRole?: string;
+  lastAt: string;
+  lastPreview: string;
+  unread: number;
+};
 
 export default function Messages() {
   const t = useTranslation();
-  const sorted = [...CONVERSATIONS].sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
+  const { isDemoMode } = useSession();
+  const me = useCurrentUser();
+  const [previews, setPreviews] = useState<Preview[]>([]);
+
+  useEffect(() => {
+    if (isDemoMode) {
+      setPreviews(
+        MOCK_CONVERSATIONS.map((c) => {
+          const contact = mockContactById(c.participantId);
+          return {
+            id: c.id,
+            otherId: c.participantId,
+            otherName: contact?.name ?? '—',
+            otherRole: contact?.role,
+            lastAt: c.lastMessageAt,
+            lastPreview: c.lastMessagePreview,
+            unread: c.unreadCount,
+          };
+        }),
+      );
+      return;
+    }
+
+    let cancelled = false;
+    const load = async () => {
+      const convs = await messagingRepo.listConversationsForMe();
+      if (cancelled) return;
+      const built = await buildPreviews(convs, me.id);
+      if (!cancelled) setPreviews(built);
+    };
+    void load();
+
+    const sub = messagingRepo.subscribeConversations(load);
+    return () => {
+      cancelled = true;
+      sub.unsubscribe();
+    };
+  }, [isDemoMode, me.id]);
+
+  const sorted = useMemo(
+    () => [...previews].sort((a, b) => b.lastAt.localeCompare(a.lastAt)),
+    [previews],
+  );
 
   return (
     <div className="flex h-full flex-col pb-28">
@@ -39,41 +96,66 @@ export default function Messages() {
           </div>
         ) : (
           <ul className="flex flex-col gap-3">
-            {sorted.map((c) => {
-              const contact = contactById(c.participantId);
-              return (
-                <li key={c.id}>
-                  <Link
-                    to={`/messages/${c.id}`}
-                    className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
-                  >
-                    <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary">
-                      <span className="font-bold">{initials(contact?.name ?? '?')}</span>
-                      {contact?.online && (
-                        <span className="absolute right-0 bottom-0 h-3 w-3 rounded-full border-2 border-surface-container-lowest bg-tertiary-fixed-dim" />
-                      )}
+            {sorted.map((p) => (
+              <li key={p.id}>
+                <Link
+                  to={`/messages/${p.id}`}
+                  className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
+                >
+                  <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary">
+                    <span className="font-bold">{initials(p.otherName)}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex justify-between gap-2">
+                      <p className="truncate text-label-md font-semibold">{p.otherName}</p>
+                      <span className="shrink-0 text-label-sm text-outline">{relative(p.lastAt, t)}</span>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex justify-between gap-2">
-                        <p className="truncate text-label-md font-semibold">{contact?.name ?? '—'}</p>
-                        <span className="shrink-0 text-label-sm text-outline">{relative(c.lastMessageAt, t)}</span>
-                      </div>
-                      <p className="truncate text-label-md text-on-surface-variant">{c.lastMessagePreview}</p>
-                    </div>
-                    {c.unreadCount > 0 && (
-                      <span className="shrink-0 rounded-full bg-error px-2 py-0.5 text-[10px] font-bold text-on-error">
-                        {c.unreadCount}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
+                    <p className="truncate text-label-md text-on-surface-variant">{p.lastPreview}</p>
+                  </div>
+                  {p.unread > 0 && (
+                    <span className="shrink-0 rounded-full bg-error px-2 py-0.5 text-[10px] font-bold text-on-error">
+                      {p.unread}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            ))}
           </ul>
         )}
       </main>
     </div>
   );
+}
+
+async function buildPreviews(convs: Conversation[], me: string): Promise<Preview[]> {
+  if (convs.length === 0 || !hasSupabase || !supabase) return [];
+  const otherIds = convs.map((c) => (c.participantA === me ? c.participantB : c.participantA));
+  const { data: profiles } = await supabase.from('profiles').select('id, name, role').in('id', otherIds);
+  const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
+
+  const previews = await Promise.all(
+    convs.map(async (c) => {
+      const otherId = c.participantA === me ? c.participantB : c.participantA;
+      const { data: last } = await supabase!
+        .from('messages')
+        .select('body, created_at')
+        .eq('conversation_id', c.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+      const lastRow = last?.[0];
+      const preview: Preview = {
+        id: c.id,
+        otherId,
+        otherName: byId.get(otherId)?.name ?? '—',
+        otherRole: byId.get(otherId)?.role,
+        lastAt: (lastRow?.created_at as string) ?? c.lastMessageAt ?? c.createdAt,
+        lastPreview: (lastRow?.body as string) ?? '',
+        unread: 0,
+      };
+      return preview;
+    }),
+  );
+  return previews;
 }
 
 function relative(iso: string, t: (k: string, v?: Record<string, string | number>) => string): string {

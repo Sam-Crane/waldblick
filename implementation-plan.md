@@ -157,7 +157,7 @@ Includes machine positions (scenario #4): lightweight `machines` table, 30s broa
 
 Done when: creating a beetle observation auto-flags it critical; creating a reforestation observation shows the top 3 species recommendations with soil-class rationale; assigning a task moves it to the contractor's list.
 
-### Phase 4.5 — Messaging, connections, notifications (2 days)
+### Phase 4.5 — Messaging, connections, notifications (2 days) ✅ COMPLETE
 
 Turns the tool from a single-user logger into a coordination platform.
 

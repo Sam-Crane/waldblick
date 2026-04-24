@@ -6,6 +6,7 @@ import PriorityBadge from '@/components/PriorityBadge';
 import WeatherPanel from '@/components/WeatherPanel';
 import SpeciesRecommendations from '@/components/SpeciesRecommendations';
 import AssignSheet from '@/components/AssignSheet';
+import ShareToChatSheet from '@/components/ShareToChatSheet';
 import { db } from '@/data/db';
 import { CONTACTS } from '@/data/mocks';
 import { initials } from '@/data/currentUser';
@@ -20,6 +21,7 @@ export default function ObservationDetails() {
   const photo = useLiveQuery(() => (id ? db.photos.where('observationId').equals(id).first() : undefined), [id]);
   const tasks = useLiveQuery(() => (id ? db.tasks.where('observationId').equals(id).toArray() : []), [id]) ?? [];
   const [assignOpen, setAssignOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const assignee = tasks[0] ? CONTACTS.find((c) => c.id === tasks[0].assigneeId) : undefined;
 
@@ -43,6 +45,15 @@ export default function ObservationDetails() {
             aria-label={t('common.back')}
           >
             <span className="material-symbols-outlined text-primary">arrow_back</span>
+          </button>
+        }
+        trailing={
+          <button
+            onClick={() => setShareOpen(true)}
+            className="touch-safe flex items-center justify-center rounded-full hover:bg-surface-container"
+            aria-label={t('share.title')}
+          >
+            <span className="material-symbols-outlined text-primary-container">share</span>
           </button>
         }
       />
@@ -157,6 +168,12 @@ export default function ObservationDetails() {
         open={assignOpen}
         observationId={observation.id}
         onClose={() => setAssignOpen(false)}
+      />
+      <ShareToChatSheet
+        open={shareOpen}
+        observationId={observation.id}
+        defaultBody={observation.description}
+        onClose={() => setShareOpen(false)}
       />
     </div>
   );

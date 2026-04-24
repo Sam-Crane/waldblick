@@ -2,7 +2,18 @@
 // repositories in a later phase. Single source for the stubs so we can swap
 // them out in one place.
 
-import type { AppNotification, ChatMessage, Contact, Conversation, Plot } from './types';
+import type { AppNotification, ChatMessage, Contact, Plot } from './types';
+
+// Demo conversations in mocks have a simpler preview-oriented shape than
+// the Supabase-backed Conversation. Kept here so the Messages/Conversation
+// screens can render something in demo mode.
+export type MockConversation = {
+  id: string;
+  participantId: string;
+  lastMessageAt: string;
+  lastMessagePreview: string;
+  unreadCount: number;
+};
 
 export const CONTACTS: Contact[] = [
   {
@@ -28,7 +39,7 @@ export const CONTACTS: Contact[] = [
   },
 ];
 
-export const CONVERSATIONS: Conversation[] = [
+export const CONVERSATIONS: MockConversation[] = [
   {
     id: 'conv-1',
     participantId: 'c-tobias',

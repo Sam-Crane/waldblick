@@ -85,21 +85,31 @@ export type Contact = {
   online?: boolean;
 };
 
+export type Connection = {
+  id: string;
+  requesterId: string;
+  addresseeId: string;
+  status: 'pending' | 'accepted' | 'blocked';
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Conversation = {
   id: string;
-  participantId: string; // the other party — current user is implicit
-  lastMessageAt: string;
-  lastMessagePreview: string;
-  unreadCount: number;
+  participantA: string;
+  participantB: string;
+  lastMessageAt?: string;
+  createdAt: string;
 };
 
 export type ChatMessage = {
   id: string;
   conversationId: string;
-  authorId: string; // matches Contact.id or current user id
+  authorId: string;
   body: string;
   createdAt: string;
-  observationId?: string; // optional — link to an observation
+  observationId?: string;
+  pending?: boolean;
 };
 
 export type NotificationKind =

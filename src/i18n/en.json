@@ -232,7 +232,11 @@
     "connect": "Connect",
     "notFound": "Conversation not found.",
     "placeholder": "Write a message…",
-    "send": "Send"
+    "send": "Send",
+    "loading": "Loading messages…",
+    "sending": "sending…",
+    "startConversation": "Send the first message.",
+    "observationAttached": "View observation"
   },
   "time": {
     "now": "now",
@@ -251,7 +255,25 @@
     "send": "Send",
     "requestSent": "Request sent to {code}.",
     "suggested": "Suggested contacts",
-    "connect": "Connect"
+    "connect": "Connect",
+    "pending": "Pending requests",
+    "accept": "Accept",
+    "contacts": "Contacts",
+    "chat": "Chat",
+    "outgoingPending": "{n} outgoing requests waiting to be accepted.",
+    "err": {
+      "supabase_missing": "Supabase is not configured.",
+      "not_authenticated": "Please sign in first.",
+      "code_not_found": "No user with that code.",
+      "cannot_connect_self": "You can't connect with yourself.",
+      "unknown": "Request failed."
+    }
+  },
+  "share": {
+    "title": "Send to chat",
+    "message": "Message (optional)",
+    "placeholder": "Add a quick note…",
+    "noContacts": "No connected contacts yet."
   },
   "notifications": {
     "open": "Open notifications",

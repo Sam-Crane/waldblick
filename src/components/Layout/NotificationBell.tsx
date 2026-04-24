@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NOTIFICATIONS } from '@/data/mocks';
+import { NOTIFICATIONS as MOCK_NOTIFICATIONS } from '@/data/mocks';
+import { notificationsRepo } from '@/data/notificationsRepo';
+import { useSession } from '@/data/session';
 import type { AppNotification, NotificationKind } from '@/data/types';
 import { useTranslation } from '@/i18n';
 
@@ -23,9 +25,30 @@ const ACCENT_FOR: Record<NotificationKind, string> = {
 export default function NotificationBell({ variant = 'light' }: { variant?: 'light' | 'dark' }) {
   const t = useTranslation();
   const navigate = useNavigate();
+  const { isDemoMode } = useSession();
   const [open, setOpen] = useState(false);
-  const [items, setItems] = useState<AppNotification[]>(NOTIFICATIONS);
+  const [items, setItems] = useState<AppNotification[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+
+  // Load notifications (live from Supabase, or fall back to the demo set).
+  useEffect(() => {
+    if (isDemoMode) {
+      setItems(MOCK_NOTIFICATIONS);
+      return;
+    }
+    let cancelled = false;
+    const load = () => {
+      notificationsRepo.list().then((list) => {
+        if (!cancelled) setItems(list);
+      });
+    };
+    load();
+    const sub = notificationsRepo.subscribe(load);
+    return () => {
+      cancelled = true;
+      sub.unsubscribe();
+    };
+  }, [isDemoMode]);
 
   const unread = useMemo(() => items.filter((n) => !n.read).length, [items]);
 
@@ -42,13 +65,17 @@ export default function NotificationBell({ variant = 'light' }: { variant?: 'lig
     };
   }, [open]);
 
-  const tap = (n: AppNotification) => {
+  const tap = async (n: AppNotification) => {
     setItems((list) => list.map((x) => (x.id === n.id ? { ...x, read: true } : x)));
     setOpen(false);
+    if (!isDemoMode) void notificationsRepo.markRead([n.id]);
     if (n.targetPath) navigate(n.targetPath);
   };
 
-  const markAll = () => setItems((list) => list.map((n) => ({ ...n, read: true })));
+  const markAll = async () => {
+    setItems((list) => list.map((n) => ({ ...n, read: true })));
+    if (!isDemoMode) void notificationsRepo.markAllRead();
+  };
 
   const color = variant === 'dark' ? 'text-on-primary' : 'text-primary-container';
 

@@ -232,7 +232,11 @@
     "connect": "Verbinden",
     "notFound": "Unterhaltung nicht gefunden.",
     "placeholder": "Nachricht schreiben…",
-    "send": "Senden"
+    "send": "Senden",
+    "loading": "Nachrichten werden geladen…",
+    "sending": "wird gesendet…",
+    "startConversation": "Schreiben Sie die erste Nachricht.",
+    "observationAttached": "Beobachtung anzeigen"
   },
   "time": {
     "now": "jetzt",
@@ -251,7 +255,25 @@
     "send": "Senden",
     "requestSent": "Anfrage an {code} gesendet.",
     "suggested": "Vorgeschlagene Kontakte",
-    "connect": "Verbinden"
+    "connect": "Verbinden",
+    "pending": "Offene Anfragen",
+    "accept": "Annehmen",
+    "contacts": "Kontakte",
+    "chat": "Chat",
+    "outgoingPending": "{n} ausgehende Anfragen warten auf Annahme.",
+    "err": {
+      "supabase_missing": "Supabase ist nicht konfiguriert.",
+      "not_authenticated": "Bitte zuerst anmelden.",
+      "code_not_found": "Kein Nutzer mit diesem Code gefunden.",
+      "cannot_connect_self": "Sie können sich nicht mit sich selbst verbinden.",
+      "unknown": "Anfrage fehlgeschlagen."
+    }
+  },
+  "share": {
+    "title": "An Chat senden",
+    "message": "Nachricht (optional)",
+    "placeholder": "Kurze Notiz hinzufügen…",
+    "noContacts": "Noch keine verbundenen Kontakte."
   },
   "notifications": {
     "open": "Benachrichtigungen öffnen",

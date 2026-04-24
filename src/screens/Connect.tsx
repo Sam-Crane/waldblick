@@ -1,34 +1,84 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '@/components/Layout/TopBar';
 import { useCurrentUser, initials } from '@/data/currentUser';
-import { CONTACTS } from '@/data/mocks';
+import { useSession } from '@/data/session';
+import { connectionsRepo } from '@/data/connectionsRepo';
+import { messagingRepo } from '@/data/messagingRepo';
+import type { Connection } from '@/data/types';
 import { useTranslation } from '@/i18n';
+
+type ConnWithOther = Connection & { other: { id: string; name: string | null; role: string } };
 
 export default function Connect() {
   const t = useTranslation();
   const navigate = useNavigate();
+  const { isDemoMode } = useSession();
   const me = useCurrentUser();
-  const [code, setCode] = useState('');
-  const [message, setMessage] = useState<string | undefined>();
 
-  const myCode = useMemo(() => (me.id.slice(0, 6) + me.name.replace(/\s+/g, '')).toUpperCase().slice(0, 8), [me]);
+  const [myCode, setMyCode] = useState<string>('');
+  const [code, setCode] = useState('');
+  const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | undefined>();
+  const [busy, setBusy] = useState(false);
+  const [list, setList] = useState<ConnWithOther[]>([]);
+
+  useEffect(() => {
+    if (isDemoMode) {
+      setMyCode((me.id.slice(0, 6) + me.name.replace(/\s+/g, '')).toUpperCase().slice(0, 8));
+      return;
+    }
+    void connectionsRepo.myInviteCode().then((c) => c && setMyCode(c));
+    void connectionsRepo.listWithProfiles().then(setList);
+  }, [isDemoMode, me.id, me.name]);
 
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(myCode);
-      setMessage(t('connect.copied'));
+      setMessage({ tone: 'ok', text: t('connect.copied') });
     } catch {
-      setMessage(t('connect.copyFailed'));
+      setMessage({ tone: 'error', text: t('connect.copyFailed') });
     }
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) return;
-    setMessage(t('connect.requestSent', { code: code.trim().toUpperCase() }));
+    setBusy(true);
+    setMessage(undefined);
+
+    if (isDemoMode) {
+      setMessage({ tone: 'ok', text: t('connect.requestSent', { code: code.trim().toUpperCase() }) });
+      setCode('');
+      setBusy(false);
+      return;
+    }
+
+    const result = await connectionsRepo.sendRequest(code);
+    setBusy(false);
+    if (!result.ok) {
+      setMessage({ tone: 'error', text: t(`connect.err.${result.error}`) });
+      return;
+    }
+    setMessage({ tone: 'ok', text: t('connect.requestSent', { code: result.contact.name ?? code }) });
     setCode('');
+    void connectionsRepo.listWithProfiles().then(setList);
   };
+
+  const accept = async (c: ConnWithOther) => {
+    await connectionsRepo.accept(c.id);
+    // Open a conversation straight away so they can say hello.
+    const conv = await messagingRepo.ensureConversation(c.other.id);
+    if (conv) navigate(`/messages/${conv.id}`);
+  };
+
+  const openChatWith = async (otherId: string) => {
+    const conv = await messagingRepo.ensureConversation(otherId);
+    if (conv) navigate(`/messages/${conv.id}`);
+  };
+
+  const pending = list.filter((c) => c.status === 'pending' && c.addresseeId === me.id);
+  const accepted = list.filter((c) => c.status === 'accepted');
+  const outgoing = list.filter((c) => c.status === 'pending' && c.requesterId === me.id);
 
   return (
     <div className="flex min-h-full flex-col bg-background pb-24">
@@ -53,10 +103,11 @@ export default function Connect() {
             {t('connect.yourCode')}
           </h2>
           <div className="mt-2 flex items-center justify-between gap-3">
-            <span className="font-mono text-headline-lg tracking-widest">{myCode}</span>
+            <span className="font-mono text-headline-lg tracking-widest">{myCode || '—'}</span>
             <button
               onClick={copy}
-              className="touch-safe flex items-center gap-2 rounded-lg bg-primary-container px-3 text-on-primary active:scale-95"
+              disabled={!myCode}
+              className="touch-safe flex items-center gap-2 rounded-lg bg-primary-container px-3 text-on-primary active:scale-95 disabled:opacity-50"
             >
               <span className="material-symbols-outlined">content_copy</span>
               <span className="text-label-sm font-semibold uppercase tracking-wider">{t('connect.copy')}</span>
@@ -77,48 +128,92 @@ export default function Connect() {
             />
             <button
               type="submit"
-              className="touch-safe rounded-lg bg-safety px-4 font-semibold uppercase tracking-widest text-white active:scale-95"
+              disabled={busy || !code.trim()}
+              className="touch-safe rounded-lg bg-safety px-4 font-semibold uppercase tracking-widest text-white active:scale-95 disabled:opacity-50"
             >
-              {t('connect.send')}
+              {busy ? '…' : t('connect.send')}
             </button>
           </form>
           {message && (
-            <p className="mt-2 rounded bg-tertiary-container px-3 py-2 text-label-md text-on-tertiary-container">
-              {message}
+            <p
+              className={`mt-2 rounded px-3 py-2 text-label-md ${
+                message.tone === 'ok'
+                  ? 'bg-tertiary-container text-on-tertiary-container'
+                  : 'bg-error-container text-on-error-container'
+              }`}
+            >
+              {message.text}
             </p>
           )}
         </section>
 
-        {/* Suggested / existing contacts */}
-        <section>
-          <h2 className="mb-3 text-label-sm uppercase tracking-widest text-outline">{t('connect.suggested')}</h2>
-          <ul className="flex flex-col gap-2">
-            {CONTACTS.map((c) => (
-              <li
-                key={c.id}
-                className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container text-on-primary text-label-sm font-bold">
-                    {initials(c.name)}
-                  </div>
-                  <div>
-                    <p className="text-label-md font-semibold">{c.name}</p>
-                    <p className="text-label-sm text-outline">
-                      {t(`role.${c.role}`)} · {c.forestName ?? '—'}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  className="touch-safe rounded-lg border border-outline-variant px-3 text-label-sm font-semibold uppercase tracking-wider text-primary hover:bg-surface-container"
-                  onClick={() => setMessage(t('connect.requestSent', { code: c.name }))}
+        {/* Incoming pending requests — explicit accept */}
+        {pending.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-label-sm uppercase tracking-widest text-outline">{t('connect.pending')}</h2>
+            <ul className="flex flex-col gap-2">
+              {pending.map((c) => (
+                <li
+                  key={c.id}
+                  className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
                 >
-                  {t('connect.connect')}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-tertiary-container text-on-tertiary-container text-label-sm font-bold">
+                      {initials(c.other.name ?? '?')}
+                    </div>
+                    <div>
+                      <p className="text-label-md font-semibold">{c.other.name ?? '—'}</p>
+                      <p className="text-label-sm text-outline">{t(`role.${c.other.role}`)}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => accept(c)}
+                    className="touch-safe rounded-lg bg-primary px-3 text-label-sm font-semibold uppercase tracking-widest text-on-primary active:scale-95"
+                  >
+                    {t('connect.accept')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* Accepted contacts — open chat */}
+        {accepted.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-label-sm uppercase tracking-widest text-outline">{t('connect.contacts')}</h2>
+            <ul className="flex flex-col gap-2">
+              {accepted.map((c) => (
+                <li
+                  key={c.id}
+                  className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container text-on-primary text-label-sm font-bold">
+                      {initials(c.other.name ?? '?')}
+                    </div>
+                    <div>
+                      <p className="text-label-md font-semibold">{c.other.name ?? '—'}</p>
+                      <p className="text-label-sm text-outline">{t(`role.${c.other.role}`)}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => openChatWith(c.other.id)}
+                    className="touch-safe rounded-lg border border-outline-variant px-3 text-label-sm font-semibold uppercase tracking-wider text-primary hover:bg-surface-container"
+                  >
+                    {t('connect.chat')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {outgoing.length > 0 && (
+          <p className="text-center text-label-sm text-outline">
+            {t('connect.outgoingPending', { n: outgoing.length })}
+          </p>
+        )}
       </div>
     </div>
   );

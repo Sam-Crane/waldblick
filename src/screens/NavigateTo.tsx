@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
@@ -46,7 +46,6 @@ export default function NavigateTo() {
   const [state, setState] = useState<State>({ phase: 'waiting' });
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
   const [compassGranted, setCompassGranted] = useState<boolean | null>(null);
-  const lastHapticAt = useRef<number>(0);
 
   // Live GPS. watchPosition gives us accuracy + heading (when moving).
   useEffect(() => {
@@ -73,12 +72,14 @@ export default function NavigateTo() {
           accuracyM: pos.coords.accuracy,
         });
 
-        // Haptic on transitions into proximity bands.
-        if (distanceM <= ARRIVED_M) {
-          maybeVibrate(lastHapticAt, [80, 40, 80]);
-        } else if (distanceM <= CLOSE_M) {
-          maybeVibrate(lastHapticAt, 120);
-        }
+        // Haptic cues intentionally omitted: Chrome blocks
+        // navigator.vibrate from async callbacks unless the user tapped
+        // within the last ~5 seconds (User Activation policy). Holding
+        // the phone while walking doesn't count, so vibration from
+        // watchPosition fires the "Intervention" warning and usually
+        // no-ops. Visual state (green "arrived" ring) is the primary
+        // cue. If the user needs audible feedback later, we can add a
+        // beep via Web Audio that plays only after a user gesture.
       },
       (err) => {
         const key =
@@ -287,15 +288,3 @@ function formatDistance(m: number): string {
   return `${(m / 1000).toFixed(1)} km`;
 }
 
-function maybeVibrate(lastAt: { current: number }, pattern: number | number[]) {
-  const now = Date.now();
-  if (now - lastAt.current < 4_000) return;
-  lastAt.current = now;
-  if ('vibrate' in navigator) {
-    try {
-      navigator.vibrate(pattern);
-    } catch {
-      /* iOS Safari doesn't support it — no-op */
-    }
-  }
-}

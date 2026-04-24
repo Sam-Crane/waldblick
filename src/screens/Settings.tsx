@@ -3,20 +3,35 @@ import { useState } from 'react';
 import TopBar from '@/components/Layout/TopBar';
 import { setLang, useTranslation } from '@/i18n';
 import { db } from '@/data/db';
+import { fullResync } from '@/data/realtimeSync';
+import { useToast } from '@/components/Toast';
 
 export default function Settings() {
   const t = useTranslation();
   const navigate = useNavigate();
+  const toast = useToast();
   const [lang, setLocalLang] = useState<'de' | 'en'>(
     typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en',
   );
   const [busy, setBusy] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
 
   const changeLang = (next: 'de' | 'en') => {
     setLocalLang(next);
     setLang(next);
     // Re-render: navigate to same path.
     navigate(0);
+  };
+
+  const resync = async () => {
+    setResyncing(true);
+    const result = await fullResync();
+    setResyncing(false);
+    if (result) {
+      toast.success(t('settings.resyncDone', { removed: result.removed, kept: result.kept }));
+    } else {
+      toast.error(t('settings.resyncFailed'));
+    }
   };
 
   const clearLocal = async () => {
@@ -66,7 +81,17 @@ export default function Settings() {
         </Section>
 
         <Section title={t('settings.offline')}>
-          <Row icon="cloud_sync" label={t('settings.syncStatus')} value={t('settings.syncComingSoon')} />
+          <button
+            disabled={resyncing}
+            onClick={resync}
+            className="touch-safe flex w-full items-center justify-center gap-2 rounded-lg border-2 border-primary-container text-primary-container active:scale-95 disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined ${resyncing ? 'animate-spin' : ''}`}>sync</span>
+            <span className="text-label-md font-semibold uppercase tracking-widest">
+              {resyncing ? t('settings.resyncing') : t('settings.resyncNow')}
+            </span>
+          </button>
+          <p className="mt-1 text-label-sm text-outline">{t('settings.resyncHint')}</p>
           <button
             disabled={busy}
             onClick={clearLocal}

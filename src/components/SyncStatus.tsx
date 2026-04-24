@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { syncNow, useSyncState } from '@/data/syncEngine';
 import { hasSupabase } from '@/data/supabase';
+import { useToast } from '@/components/Toast';
 import { useTranslation } from '@/i18n';
 
 // Small pill in the top bar. Shows pending count + online status.
@@ -8,7 +9,9 @@ import { useTranslation } from '@/i18n';
 export default function SyncStatus({ variant = 'light' }: { variant?: 'light' | 'dark' }) {
   const t = useTranslation();
   const state = useSyncState();
+  const toast = useToast();
   const [online, setOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+  const lastSurfacedError = useRef<string | undefined>();
 
   useEffect(() => {
     const on = () => setOnline(true);
@@ -20,6 +23,17 @@ export default function SyncStatus({ variant = 'light' }: { variant?: 'light' | 
       window.removeEventListener('offline', off);
     };
   }, []);
+
+  // Surface fresh sync errors as a toast once, not per-state-change.
+  useEffect(() => {
+    if (state.status === 'error' && state.lastError && state.lastError !== lastSurfacedError.current) {
+      lastSurfacedError.current = state.lastError;
+      toast.error(`${t('sync.error')}: ${state.lastError}`);
+    }
+    if (state.status === 'idle' && state.pending === 0) {
+      lastSurfacedError.current = undefined;
+    }
+  }, [state.status, state.lastError, state.pending, toast, t]);
 
   if (!hasSupabase) return null;
 

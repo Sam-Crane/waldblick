@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import TopBar from '@/components/Layout/TopBar';
+import { ConversationRowSkeleton } from '@/components/Skeleton';
 import { CONVERSATIONS as MOCK_CONVERSATIONS, contactById as mockContactById } from '@/data/mocks';
 import { useCurrentUser, initials } from '@/data/currentUser';
 import { useSession } from '@/data/session';
@@ -24,9 +25,11 @@ export default function Messages() {
   const { isDemoMode } = useSession();
   const me = useCurrentUser();
   const [previews, setPreviews] = useState<Preview[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (isDemoMode) {
+      setLoading(false);
       setPreviews(
         MOCK_CONVERSATIONS.map((c) => {
           const contact = mockContactById(c.participantId);
@@ -45,11 +48,15 @@ export default function Messages() {
     }
 
     let cancelled = false;
+    setLoading(true);
     const load = async () => {
       const convs = await messagingRepo.listConversationsForMe();
       if (cancelled) return;
       const built = await buildPreviews(convs, me.id);
-      if (!cancelled) setPreviews(built);
+      if (!cancelled) {
+        setPreviews(built);
+        setLoading(false);
+      }
     };
     void load();
 
@@ -82,7 +89,15 @@ export default function Messages() {
         }
       />
       <main className="mx-auto w-full max-w-2xl px-margin-main py-stack-lg">
-        {sorted.length === 0 ? (
+        {loading ? (
+          <ul className="flex flex-col gap-3" aria-busy="true">
+            {[0, 1, 2].map((i) => (
+              <li key={i}>
+                <ConversationRowSkeleton />
+              </li>
+            ))}
+          </ul>
+        ) : sorted.length === 0 ? (
           <div className="rounded-lg border border-dashed border-outline-variant p-8 text-center text-on-surface-variant">
             <span className="material-symbols-outlined mb-2 text-4xl">chat</span>
             <p>{t('messages.empty')}</p>

@@ -148,7 +148,9 @@
     "captureLocation": "Capture GPS Position",
     "locating": "Locating…",
     "submit": "Save Observation",
-    "autoSuggested": "Auto-suggested"
+    "autoSuggested": "Auto-suggested",
+    "saved": "Observation saved.",
+    "saveFailed": "Save failed: {error}"
   },
   "assign": {
     "title": "Assign Task",

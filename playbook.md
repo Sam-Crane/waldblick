@@ -102,6 +102,58 @@ Connections are invite-code based, not email-search, because field workers know 
 2. Client: `/connect` screen shows your code + input. On submit, insert a `connections` row with status `pending`. The other user sees a `connection_request` notification.
 3. Accepting creates a mirror row if needed and opens a conversation.
 
+## Field test checklist (pre-demo)
+
+Run through this on an actual phone (iOS + Android if possible), outside, with patchy 4G. Budget 30 minutes. If any step fails, it blocks the demo.
+
+### Setup
+- [ ] Supabase project provisioned, all four migrations applied (`0001–0004`).
+- [ ] `.env` filled in, app deployed over HTTPS (or tested via ngrok for iOS Safari).
+- [ ] Install the PWA: iPhone Safari → Share → "Add to Home Screen"; Android Chrome → "Install app".
+- [ ] Sign in with a real account; verify profile loads, invite code appears on `/connect`.
+
+### Capture loop (core UX — must be fast)
+- [ ] Tap the orange Record FAB → camera opens.
+- [ ] Capture a photo, fill description, pick category "Borkenkäfer", hit Save.
+- [ ] Toast shows "Beobachtung gespeichert". Detail screen opens. Photo, GPS, category render correctly.
+- [ ] Priority auto-suggested `Kritisch` for beetle — don't override.
+- [ ] Tasks list includes the new row at top with critical badge.
+
+### Offline (critical constraint)
+- [ ] Toggle airplane mode on.
+- [ ] Capture 5 observations with photos in rapid succession. All 5 must appear in the Tasks list with no visible delay.
+- [ ] Sync pill in top bar shows `Offline · 5 ausstehend`.
+- [ ] Force-quit the app and reopen. All 5 observations still there.
+- [ ] Turn airplane mode off. Sync pill cycles to "Wird synchronisiert…" then "Synchronisiert".
+- [ ] Log in from a second device (or incognito window) with a second account in the same forest → realtime delivers the 5 observations.
+
+### Map
+- [ ] MapLibre canvas renders with ESRI satellite basemap.
+- [ ] Markers for captured observations appear colored by priority.
+- [ ] Layer panel (top-right layers icon): toggle ALKIS Parzellarkarte on → parcel outlines overlay. Toggle off. Try LfU ÜBK25.
+- [ ] Geolocate button (top-right) centers on real GPS with a reasonable accuracy circle. If wrong location, check "Precise Location" in iOS settings.
+- [ ] Long-press a point → route polyline + card with distance/ETA (requires `VITE_GOOGLE_DIRECTIONS_KEY`).
+- [ ] On tablet, right-side inventory panel appears with counts and recent logs.
+
+### Coordination
+- [ ] `/connect` → copy your invite code. On a second device, paste it → request sent toast.
+- [ ] First device shows "Offene Anfragen" section → tap Accept → conversation opens.
+- [ ] Both devices exchange messages; realtime arrives within a second.
+- [ ] Open observation detail → Share icon → pick contact → message sent with observation attached.
+- [ ] Creating a critical observation on device A → notification bell badges on device B. Tap → opens the observation.
+- [ ] On observation detail, tap Assign → pick contact → task appears on the assignee's "Assigned to me" filter.
+
+### Demos that tend to break
+- [ ] With Supabase offline (disable the project briefly): app still captures locally, pill shows offline.
+- [ ] Very long description (500+ chars): scrolls cleanly, no layout break.
+- [ ] Photo from a 12MP phone camera: resized to ≤1600px, uploads under 500KB.
+- [ ] Switch DE → EN → DE in Settings; strings swap without a reload needed to re-render.
+
+### What to bring
+- A real phone, charged, with mobile data.
+- Screenshots of any failed step.
+- An energy bar for morale.
+
 ## When stuck
 
 - Visual decisions → re-read `DESIGN.md`, look at the four screen PNGs for reference.

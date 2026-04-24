@@ -4,6 +4,7 @@ import TopBar from '@/components/Layout/TopBar';
 import { useTranslation } from '@/i18n';
 import { observationRepo } from '@/data/observationRepo';
 import { defaultPriorityFor } from '@/domain/priority';
+import { useToast } from '@/components/Toast';
 import type { Category, Priority } from '@/data/types';
 
 const priorities: Priority[] = ['low', 'medium', 'critical'];
@@ -12,6 +13,7 @@ const categories: Category[] = ['beetle', 'thinning', 'reforestation', 'windthro
 export default function AddObservation() {
   const navigate = useNavigate();
   const t = useTranslation();
+  const toast = useToast();
   const [category, setCategory] = useState<Category>('other');
   const [priority, setPriority] = useState<Priority>(() => defaultPriorityFor('other'));
   const [priorityTouched, setPriorityTouched] = useState(false);
@@ -51,15 +53,20 @@ export default function AddObservation() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!coords) return;
-    const id = await observationRepo.create({
-      category,
-      priority,
-      description,
-      lat: coords.lat,
-      lng: coords.lng,
-      photo,
-    });
-    navigate(`/observations/${id}`);
+    try {
+      const id = await observationRepo.create({
+        category,
+        priority,
+        description,
+        lat: coords.lat,
+        lng: coords.lng,
+        photo,
+      });
+      toast.success(t('record.saved'));
+      navigate(`/observations/${id}`);
+    } catch (err) {
+      toast.error(t('record.saveFailed', { error: (err as Error).message }));
+    }
   };
 
   return (

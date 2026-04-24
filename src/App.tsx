@@ -2,6 +2,8 @@ import { Route, Routes } from 'react-router-dom';
 import AppShell from '@/components/Layout/AppShell';
 import AuthGuard from '@/components/Layout/AuthGuard';
 import UpdatePrompt from '@/components/UpdatePrompt';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { ToastProvider } from '@/components/Toast';
 import { useSyncDriver } from '@/data/syncEngine';
 import { useRealtimeSync } from '@/data/realtimeSync';
 import SplashScreen from '@/screens/SplashScreen';
@@ -24,7 +26,8 @@ export default function App() {
   useSyncDriver();
   useRealtimeSync();
   return (
-    <>
+    <ErrorBoundary>
+      <ToastProvider>
       <UpdatePrompt />
       <Routes>
         <Route index element={<SplashScreen />} />
@@ -51,6 +54,7 @@ export default function App() {
           </Route>
         </Route>
       </Routes>
-    </>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 }

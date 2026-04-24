@@ -173,7 +173,7 @@ Turns the tool from a single-user logger into a coordination platform.
 
 Done when: user A sends an invite code to user B; B accepts; A and B can message each other; a critical observation by A surfaces as a notification to B if they're in the same forest; tapping the notification deep-links to the observation.
 
-### Phase 5 — Polish before demo (1 day)
+### Phase 5 — Polish before demo (1 day) ✅ COMPLETE
 
 - German translation pass (Unterreiner is German-speaking).
 - Empty states for every list.

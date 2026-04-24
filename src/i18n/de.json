@@ -3,7 +3,7 @@
     "map": "Karte",
     "record": "Aufnehmen",
     "tasks": "Aufgaben",
-    "messages": "Chat",
+    "messages": "Nachrichten",
     "dashboard": "Übersicht"
   },
   "common": {
@@ -148,7 +148,9 @@
     "captureLocation": "GPS-Position aufnehmen",
     "locating": "GPS wird ermittelt…",
     "submit": "Beobachtung speichern",
-    "autoSuggested": "Auto-Vorschlag"
+    "autoSuggested": "Auto-Vorschlag",
+    "saved": "Beobachtung gespeichert.",
+    "saveFailed": "Speichern fehlgeschlagen: {error}"
   },
   "assign": {
     "title": "Aufgabe zuweisen",

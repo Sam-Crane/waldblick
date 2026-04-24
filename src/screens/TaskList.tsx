@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
 import PriorityBadge from '@/components/PriorityBadge';
 import FilterChip, { FilterSheet, ToggleRow } from '@/components/FilterChip';
+import { ObservationCardSkeleton } from '@/components/Skeleton';
 import { db } from '@/data/db';
 import { useCurrentUser } from '@/data/currentUser';
 import type { Category, Priority } from '@/data/types';
@@ -23,7 +24,9 @@ type OpenSheet = 'none' | 'priority' | 'category' | 'date';
 export default function TaskList() {
   const t = useTranslation();
   const me = useCurrentUser();
-  const observations = useLiveQuery(() => db.observations.toArray(), []) ?? [];
+  const observationsRaw = useLiveQuery(() => db.observations.toArray(), []);
+  const loading = observationsRaw === undefined;
+  const observations = observationsRaw ?? [];
   const myTasks = useLiveQuery(
     () => db.tasks.where('assigneeId').equals(me.id).toArray(),
     [me.id],
@@ -122,7 +125,15 @@ export default function TaskList() {
           )}
         </section>
 
-        {results.length === 0 ? (
+        {loading ? (
+          <ul className="flex flex-col gap-4" aria-busy="true">
+            {[0, 1, 2].map((i) => (
+              <li key={i}>
+                <ObservationCardSkeleton />
+              </li>
+            ))}
+          </ul>
+        ) : results.length === 0 ? (
           <div className="rounded-lg border border-dashed border-outline-variant p-8 text-center text-on-surface-variant">
             <span className="material-symbols-outlined mb-2 text-4xl">forest</span>
             <p>{observations.length === 0 ? t('tasks.empty') : t('tasks.noMatch')}</p>

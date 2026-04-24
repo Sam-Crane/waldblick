@@ -126,6 +126,15 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
       setReady(true);
     });
 
+    // Downgrade WMS tile-decode errors (empty / HTML responses for tiles
+    // outside a WMS's coverage area) from noisy uncaught rejections to
+    // quiet warnings. Other errors still surface for debugging.
+    map.on('error', (e) => {
+      const msg = e.error?.message ?? '';
+      if (msg.includes('could not be decoded') || msg.includes('AbortError')) return;
+      console.warn('[map]', msg);
+    });
+
     mapRef.current = map;
 
     return () => {

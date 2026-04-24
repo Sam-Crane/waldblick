@@ -20,6 +20,13 @@ class WaldblickDb extends Dexie {
       syncOps: 'id, createdAt, entity, kind',
       tasks: 'id, observationId, assigneeId, completedAt',
     });
+    // v3: index updatedAt so realtime pull-since-local can orderBy it.
+    this.version(3).stores({
+      observations: 'id, capturedAt, updatedAt, priority, category, status, plotId, deletedAt',
+      photos: 'id, observationId, capturedAt',
+      syncOps: 'id, createdAt, entity, kind',
+      tasks: 'id, observationId, assigneeId, completedAt',
+    });
   }
 }
 

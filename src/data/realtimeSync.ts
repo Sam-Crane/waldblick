@@ -37,22 +37,37 @@ export function useRealtimeSync(): void {
 
 async function pullSinceLocal() {
   if (!supabase) return;
-  const latest = await db.observations.orderBy('updatedAt').last();
-  const sinceIso = latest?.updatedAt ?? new Date(0).toISOString();
+  try {
+    // Defensive: on older Dexie schemas updatedAt may not be indexed — fall
+    // back to in-memory sort rather than crash the whole app.
+    let sinceIso: string;
+    try {
+      const latest = await db.observations.orderBy('updatedAt').last();
+      sinceIso = latest?.updatedAt ?? new Date(0).toISOString();
+    } catch {
+      const all = await db.observations.toArray();
+      sinceIso = all.reduce<string>(
+        (acc, o) => (o.updatedAt > acc ? o.updatedAt : acc),
+        new Date(0).toISOString(),
+      );
+    }
 
-  const { data, error } = await supabase
-    .from('observations')
-    .select('*')
-    .gt('updated_at', sinceIso)
-    .order('updated_at', { ascending: true })
-    .limit(500);
-  if (error || !data) return;
-  for (const row of data) await mergeRemoteObservation(row as Record<string, unknown>);
+    const { data, error } = await supabase
+      .from('observations')
+      .select('*')
+      .gt('updated_at', sinceIso)
+      .order('updated_at', { ascending: true })
+      .limit(500);
+    if (error || !data) return;
+    for (const row of data) await mergeRemoteObservation(row as Record<string, unknown>);
 
-  const { data: photos } = await supabase
-    .from('observation_photos')
-    .select('*')
-    .gt('captured_at', sinceIso)
-    .limit(500);
-  if (photos) for (const row of photos) await mergeRemotePhoto(row as Record<string, unknown>);
+    const { data: photos } = await supabase
+      .from('observation_photos')
+      .select('*')
+      .gt('captured_at', sinceIso)
+      .limit(500);
+    if (photos) for (const row of photos) await mergeRemotePhoto(row as Record<string, unknown>);
+  } catch (err) {
+    console.warn('pullSinceLocal failed', err);
+  }
 }

@@ -86,6 +86,19 @@
     "heading": "Heading",
     "hint": "Formatting: **bold**, *italic*, `code`, - list items, ## heading."
   },
+  "group": {
+    "newTitle": "New group",
+    "name": "Group name",
+    "namePlaceholder": "e.g. Harvester Team 1",
+    "members": "Members ({n} selected)",
+    "noContacts": "No accepted contacts yet. Invite someone on /connect first.",
+    "creatorNote": "You ({name}) are added automatically.",
+    "create": "Create group",
+    "creating": "Creating…",
+    "created": "Group \"{name}\" created.",
+    "createFailed": "Could not create group.",
+    "demoDisabled": "Not available in demo mode."
+  },
   "voice": {
     "label": "Voice note",
     "start": "Record voice note",

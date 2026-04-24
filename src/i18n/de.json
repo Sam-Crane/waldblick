@@ -86,6 +86,19 @@
     "heading": "Überschrift",
     "hint": "Formatierung: **fett**, *kursiv*, `Code`, - Listeneinträge, ## Überschrift."
   },
+  "group": {
+    "newTitle": "Neue Gruppe",
+    "name": "Gruppenname",
+    "namePlaceholder": "z. B. Harvester-Team 1",
+    "members": "Mitglieder ({n} ausgewählt)",
+    "noContacts": "Noch keine verbundenen Kontakte. Zuerst jemanden auf /connect einladen.",
+    "creatorNote": "Sie ({name}) werden automatisch hinzugefügt.",
+    "create": "Gruppe erstellen",
+    "creating": "Wird erstellt…",
+    "created": "Gruppe \"{name}\" erstellt.",
+    "createFailed": "Gruppe konnte nicht erstellt werden.",
+    "demoDisabled": "Im Demo-Modus nicht verfügbar."
+  },
   "voice": {
     "label": "Sprachnotiz",
     "start": "Sprachnotiz aufnehmen",

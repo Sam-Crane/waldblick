@@ -77,15 +77,24 @@ export default function Messages() {
       <TopBar
         title={t('messages.title')}
         trailing={
-          <Link
-            to="/connect"
-            className="touch-safe flex items-center gap-1 rounded-lg bg-primary-container px-3 text-on-primary active:scale-95"
-          >
-            <span className="material-symbols-outlined text-[18px]">person_add</span>
-            <span className="hidden text-label-sm font-semibold uppercase tracking-wider sm:inline">
-              {t('messages.connect')}
-            </span>
-          </Link>
+          <>
+            <Link
+              to="/messages/new-group"
+              className="touch-safe flex items-center justify-center rounded-lg hover:bg-surface-container"
+              aria-label={t('group.newTitle')}
+            >
+              <span className="material-symbols-outlined text-primary-container">group_add</span>
+            </Link>
+            <Link
+              to="/connect"
+              className="touch-safe flex items-center gap-1 rounded-lg bg-primary-container px-3 text-on-primary active:scale-95"
+            >
+              <span className="material-symbols-outlined text-[18px]">person_add</span>
+              <span className="hidden text-label-sm font-semibold uppercase tracking-wider sm:inline">
+                {t('messages.connect')}
+              </span>
+            </Link>
+          </>
         }
       />
       <main className="mx-auto w-full max-w-2xl px-margin-main py-stack-lg">

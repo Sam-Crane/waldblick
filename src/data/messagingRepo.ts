@@ -45,7 +45,77 @@ function orderedPair(me: string, other: string): [string, string] {
   return me < other ? [me, other] : [other, me];
 }
 
+export type ConversationKind = 'direct' | 'group';
+
 export const messagingRepo = {
+  // Create a group chat with the given member ids (excluding creator,
+  // who's auto-added by the server trigger) and a display name.
+  async createGroup(name: string, memberIds: string[]): Promise<Conversation | null> {
+    if (!hasSupabase || !supabase) return null;
+    const { data: session } = await supabase.auth.getSession();
+    const me = session.session?.user.id;
+    if (!me) return null;
+    // participant_a/_b are legacy NOT NULL columns from the DM schema; we
+    // point both at the creator for groups so the table constraint is
+    // satisfied. Real membership lives in conversation_members.
+    const { data, error } = await supabase
+      .from('conversations')
+      .insert({
+        kind: 'group',
+        name: name.trim() || 'Gruppe',
+        participant_a: me,
+        participant_b: me,
+        created_by: me,
+      })
+      .select()
+      .single();
+    if (error || !data) return null;
+    const others = Array.from(new Set(memberIds.filter((u) => u && u !== me)));
+    if (others.length > 0) {
+      await supabase
+        .from('conversation_members')
+        .insert(others.map((u) => ({ conversation_id: data.id, user_id: u })));
+    }
+    return toConv(data as RemoteConv);
+  },
+
+  async listMembers(conversationId: string): Promise<Array<{ id: string; name: string | null; role: string }>> {
+    if (!hasSupabase || !supabase) return [];
+    const { data, error } = await supabase
+      .from('conversation_members')
+      .select('user_id, profiles:user_id(id, name, role)')
+      .eq('conversation_id', conversationId);
+    if (error || !data) return [];
+    // Supabase types foreign-key joins as array even with a one-to-one
+    // relationship; normalise to flat list.
+    type JoinRow = {
+      profiles:
+        | { id: string; name: string | null; role: string }
+        | Array<{ id: string; name: string | null; role: string }>
+        | null;
+    };
+    const out: Array<{ id: string; name: string | null; role: string }> = [];
+    for (const row of data as unknown as JoinRow[]) {
+      if (!row.profiles) continue;
+      if (Array.isArray(row.profiles)) out.push(...row.profiles);
+      else out.push(row.profiles);
+    }
+    return out;
+  },
+
+  async leaveConversation(conversationId: string): Promise<boolean> {
+    if (!hasSupabase || !supabase) return false;
+    const { data: session } = await supabase.auth.getSession();
+    const me = session.session?.user.id;
+    if (!me) return false;
+    const { error } = await supabase
+      .from('conversation_members')
+      .delete()
+      .eq('conversation_id', conversationId)
+      .eq('user_id', me);
+    return !error;
+  },
+
   async ensureConversation(otherUserId: string): Promise<Conversation | null> {
     if (!hasSupabase || !supabase) return null;
     const { data: session } = await supabase.auth.getSession();

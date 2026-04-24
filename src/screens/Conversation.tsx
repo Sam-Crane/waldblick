@@ -20,6 +20,8 @@ export default function Conversation() {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [other, setOther] = useState<OtherProfile | null>(null);
+  const [groupName, setGroupName] = useState<string | null>(null);
+  const [memberMap, setMemberMap] = useState<Record<string, { name: string | null }>>({});
   const [draft, setDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
@@ -42,9 +44,19 @@ export default function Conversation() {
       if (hasSupabase && supabase) {
         const { data: conv } = await supabase.from('conversations').select('*').eq('id', id).single();
         if (conv) {
-          const otherId = conv.participant_a === me.id ? conv.participant_b : conv.participant_a;
-          const { data: prof } = await supabase.from('profiles').select('id, name').eq('id', otherId).single();
-          if (!cancelled) setOther(prof ?? { id: otherId, name: null });
+          if (conv.kind === 'group') {
+            setGroupName(conv.name ?? 'Gruppe');
+            const members = await messagingRepo.listMembers(id);
+            if (!cancelled) {
+              setMemberMap(
+                Object.fromEntries(members.map((m) => [m.id, { name: m.name }])),
+              );
+            }
+          } else {
+            const otherId = conv.participant_a === me.id ? conv.participant_b : conv.participant_a;
+            const { data: prof } = await supabase.from('profiles').select('id, name').eq('id', otherId).single();
+            if (!cancelled) setOther(prof ?? { id: otherId, name: null });
+          }
         }
       }
       const list = await messagingRepo.listMessages(id);
@@ -68,7 +80,10 @@ export default function Conversation() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages.length]);
 
-  const otherName = useMemo(() => other?.name ?? t('messages.title'), [other, t]);
+  const otherName = useMemo(
+    () => groupName ?? other?.name ?? t('messages.title'),
+    [groupName, other, t],
+  );
 
   const send = async () => {
     if (!draft.trim() || !id) return;
@@ -138,11 +153,13 @@ export default function Conversation() {
         )}
         {messages.map((m) => {
           const mine = m.authorId === me.id;
+          const isGroup = groupName != null;
+          const authorName = memberMap[m.authorId]?.name ?? other?.name ?? '?';
           return (
             <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'} items-end gap-2`}>
               {!mine && (
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary-container text-on-primary text-[10px] font-bold">
-                  {initials(other?.name ?? '?')}
+                  {initials(authorName)}
                 </div>
               )}
               <div
@@ -152,6 +169,11 @@ export default function Conversation() {
                     : 'rounded-bl-sm bg-surface-container-lowest text-on-surface'
                 } ${m.pending ? 'opacity-60' : ''}`}
               >
+                {!mine && isGroup && (
+                  <div className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-primary-container">
+                    {authorName}
+                  </div>
+                )}
                 {m.observationId && (
                   <Link
                     to={`/observations/${m.observationId}`}

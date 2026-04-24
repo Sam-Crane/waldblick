@@ -17,6 +17,7 @@ import Profile from '@/screens/Profile';
 import Settings from '@/screens/Settings';
 import Messages from '@/screens/Messages';
 import Conversation from '@/screens/Conversation';
+import NewGroupChat from '@/screens/NewGroupChat';
 import Connect from '@/screens/Connect';
 import Plots from '@/screens/Plots';
 import PlotEditor from '@/screens/PlotEditor';
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/observations/:id" element={<ObservationDetails />} />
             <Route path="/observations/:id/navigate" element={<NavigateTo />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/new-group" element={<NewGroupChat />} />
             <Route path="/messages/:id" element={<Conversation />} />
             <Route path="/connect" element={<Connect />} />
             <Route path="/plots" element={<Plots />} />

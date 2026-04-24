@@ -12,7 +12,9 @@ These are the minimum steps between the current repo state and running the [fiel
    - `supabase/migrations/0005_discovery_and_profile_autocreate.sql` *(fixes the missing invite code, opens user discovery, fans out "new user joined" notifications)*
    - `supabase/migrations/0006_fix_trigger_security.sql` *(fixes 403 on connection/message inserts — the fanout triggers needed SECURITY DEFINER — plus explicit search_path on every function to satisfy the linter)*
    - `supabase/migrations/0007_tighten_rls.sql` *(closes two cross-user leaks: observations/photos/machines with `forest_id IS NULL` are now author-only, and the tasks table's blanket FOR ALL policy is split into assignee/author-only INSERT/UPDATE/DELETE/SELECT)*
-2. **Seed a forest** by running `supabase/seeds/demo_forest.sql`. Single-owner by default — only the oldest profile becomes a member, so no cross-user visibility. For the multi-user coordination demo (everyone in one forest), also run `supabase/seeds/demo_forest_multi.sql` — deliberate privacy loosening, don't run on a prod project.
+   - `supabase/migrations/0008_invite_grants_membership.sql` *(invite-code acceptance grants real forest membership; forest owners auto-enrolled on creation; acceptance notification to the requester)*
+   - `supabase/migrations/0009_personal_forest_on_signup.sql` *(every signup now auto-creates a personal forest; backfills all existing users who didn't have one, fixing the "No forest yet" error when creating a plot)*
+2. **(optional)** `supabase/seeds/demo_forest.sql` or `_multi.sql` — only needed if you want the shared "Revier Eichberg" demo. With 0009 in place every user already has their own personal forest.
 3. **Turn on leaked-password protection** in Supabase Auth → Password Security → enable HaveIBeenPwned. One-click, blocks sign-ups with compromised passwords.
 4. **PWA icons already generated** — `public/icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, plus `apple-touch-icon.png` and `favicon-32.png`. Regenerate any time by editing `public/icon.svg` / `public/icon-maskable.svg` and running `npm run icons`.
 5. **Run the field test checklist** from [playbook.md](playbook.md). Fix any blockers found.
@@ -30,12 +32,16 @@ Right now plots are seeded as mocks. Add a minimal admin flow:
 
 Alternative shortcut: have admins hand-craft polygons in [geojson.io](https://geojson.io/) and paste the raw GeoJSON into a textarea field. Ships in an hour.
 
-### Supabase Edge Function for Directions (optional hardening)
-Move the Google Directions call out of the browser into a Supabase Edge Function so the API key stays server-side. Removes the need for HTTP-referrer restrictions and stops users from seeing the key in DevTools.
+### ✅ Supabase Edge Function for Directions — shipped
+Source at [supabase/functions/directions/index.ts](supabase/functions/directions/index.ts), docs at [supabase/functions/directions/README.md](supabase/functions/directions/README.md). Deploy with the Supabase CLI, set `GOOGLE_DIRECTIONS_KEY` + `ALLOWED_ORIGIN` secrets, then flip `VITE_USE_EDGE_DIRECTIONS=1` in your `.env`. The client picks it up and stops calling Google directly.
 
-### Real-phone installability polish
-- Ensure the manifest `start_url` + theme colors render correctly once installed.
-- Double-check iOS splash screens (per-device sizes live under `public/splash-*`).
+### ✅ iOS PWA splash screens — shipped
+Master `public/splash.svg` + 9 per-device PNGs regenerated via `npm run icons`. `index.html` has `<link rel="apple-touch-startup-image">` tags covering iPhone SE → iPhone 15 Pro Max → iPad Pro 12.9". When the device matches a media query, Safari paints that PNG during the PWA launch transition; unmatched devices fall back to the theme_color.
+
+### Real-phone installability polish (still open — needs you on a device)
+- Add to Home Screen on iPhone Safari; verify the icon renders + the splash appears on cold start.
+- Android Chrome: verify the Install prompt triggers and the maskable icon looks right inside different launcher shapes.
+- Confirm the manifest `start_url` opens to `/map` (Splash auto-navigates after 1.4s).
 - Test "Add to Home Screen" in Safari on iOS + Chrome on Android.
 
 ## Medium-horizon — production hardening

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048">
+  <!-- Master splash: 2048x2048 square. The icon generator scales this to
+       each device-specific portrait/landscape size, centering on the
+       Forest Green background. -->
+  <rect width="2048" height="2048" fill="#173124"/>
+
+  <!-- Tree: same three-tier pine as the app icon, scaled up and centered.
+       Scale factor 1.6 from the 1024-canvas icon, translated to center. -->
+  <g transform="translate(512 512) scale(1)">
+    <g fill="#b0cdbb">
+      <polygon points="512,200 400,400 624,400"/>
+      <polygon points="512,340 340,540 684,540"/>
+      <polygon points="512,480 240,720 784,720"/>
+    </g>
+    <rect x="472" y="712" width="80" height="136" rx="8" fill="#7a3000"/>
+  </g>
+
+  <!-- Wordmark below the tree -->
+  <text
+    x="1024"
+    y="1600"
+    text-anchor="middle"
+    font-family="Public Sans, system-ui, sans-serif"
+    font-weight="900"
+    font-size="120"
+    letter-spacing="-2"
+    fill="#b0cdbb"
+  >Waldblick</text>
+</svg>

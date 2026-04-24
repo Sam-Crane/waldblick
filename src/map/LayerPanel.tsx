@@ -1,4 +1,4 @@
-import { LAYERS, type LayerDef } from './layers';
+import { availableLayers, type LayerDef } from './layers';
 import { useTranslation } from '@/i18n';
 
 type Props = {
@@ -35,8 +35,9 @@ export default function LayerPanel({
   onBroadcastChange,
 }: Props) {
   const t = useTranslation();
-  const base = LAYERS.filter((l) => l.kind === 'base');
-  const overlays = LAYERS.filter((l) => l.kind === 'overlay');
+  const layers = availableLayers();
+  const base = layers.filter((l) => l.kind === 'base');
+  const overlays = layers.filter((l) => l.kind === 'overlay');
 
   return (
     <div

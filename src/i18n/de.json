@@ -141,7 +141,8 @@
       "alkisTn": "Nutzung (ALKIS)",
       "uebk25": "Bodenkarte 1:25k",
       "buek200": "Bodenübersicht 1:200k",
-      "hk100": "Hydrogeologie"
+      "hk100": "Hydrogeologie",
+      "copernicusS2": "Sentinel-2 Satellit"
     }
   },
   "record": {

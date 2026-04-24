@@ -7,13 +7,21 @@ export type LayerDef = {
   id: string;
   kind: LayerKind;
   titleKey: `map.layer.${string}`; // i18n key
-  url: string; // XYZ or WMS GetMap template
-  type: 'xyz' | 'wms';
-  layer?: string; // WMS layer param
+  url: string; // XYZ or WMS GetMap template (or a placeholder for edge-proxied)
+  // 'xyz' → url is a slippy tile template with {z}/{x}/{y}
+  // 'wms' → url is an OGC WMS endpoint we add GetMap params to
+  // 'edge-wms' → url resolves at runtime to a Supabase Edge Function
+  //            that proxies the request (OAuth kept server-side)
+  type: 'xyz' | 'wms' | 'edge-wms';
+  layer?: string; // WMS layer param (for 'wms' and 'edge-wms')
   attribution: string;
   tileSize?: 256 | 512;
   // If true, only fetched when user explicitly downloads an offline area.
   offlineOnDemand?: boolean;
+  // If set, the overlay is only shown/offered when the env flag is truthy.
+  // Use this for features that require a server-side piece (edge function,
+  // OAuth) so the UI doesn't advertise layers that can't actually load.
+  enabledByEnv?: string;
 };
 
 const BAYERN_DTK500 = 'https://geoservices.bayern.de/od/wms/dtk/v1/dtk500';
@@ -96,7 +104,29 @@ export const LAYERS: LayerDef[] = [
     attribution: '© LfU — HK100',
     offlineOnDemand: true,
   },
+  {
+    id: 'overlay-copernicus-s2',
+    kind: 'overlay',
+    titleKey: 'map.layer.copernicusS2',
+    // The actual upstream URL is on sh.dataspace.copernicus.eu; the
+    // client calls the Supabase Edge Function at /copernicus-tile and
+    // the function appends OAuth + forwards. wms.ts resolves the
+    // correct URL at request time.
+    url: '/copernicus-tile',
+    type: 'edge-wms',
+    layer: 'TRUE_COLOR',
+    attribution: '© Copernicus Data Space — Sentinel-2 L2A',
+    enabledByEnv: 'VITE_USE_COPERNICUS',
+    offlineOnDemand: true,
+  },
 ];
+
+// Convenience: filter LAYERS for ones that should be offered in the UI.
+// Respects the `enabledByEnv` guard so edge-proxied layers only appear
+// when their server-side piece is deployed and the flag is flipped.
+export function availableLayers(): LayerDef[] {
+  return LAYERS.filter((l) => !l.enabledByEnv || import.meta.env[l.enabledByEnv] === '1');
+}
 
 export function layerById(id: string): LayerDef | undefined {
   return LAYERS.find((l) => l.id === id);

@@ -47,15 +47,11 @@ Master `public/splash.svg` + 9 per-device PNGs regenerated via `npm run icons`. 
 
 ## Medium-horizon — production hardening
 
-### Copernicus Sentinel-2 in-app imagery *(deferred from Phase 2)*
-Currently we link out to the Copernicus Browser. For in-app preview:
-- Sign up for Copernicus Data Space OAuth client.
-- Add a Supabase Edge Function that proxies auth'd tile requests so the client-id/secret never touch the browser.
-- Render a fresh cloud-free S2 tile under the observation photo with date stamp.
-- Estimated: 1–1.5 days.
+### ✅ Copernicus Sentinel-2 in-app imagery — shipped
+Edge Function [supabase/functions/copernicus-tile/index.ts](supabase/functions/copernicus-tile/index.ts) proxies Sentinel Hub WMS with OAuth kept server-side (in-memory token cache with TTL). Client-side `edge-wms` layer type in the LAYERS catalog routes through the function. Hidden from the layer panel unless `VITE_USE_COPERNICUS=1`. Deploy steps in [the function README](supabase/functions/copernicus-tile/README.md).
 
-### Machine trail history *(scoped out of Phase 4)*
-Machines currently show only last-known position. Add a `machine_positions` table that stores every ping (with a short retention) and draw a fading trail behind each machine on the map.
+### ✅ Machine trail history — shipped
+Migration 0011 creates `machine_positions` with 4-hour retention (enforced by a lightweight pruner trigger on every insert). `machinesRepo.upsertSelf` now appends a breadcrumb every broadcast. `useMachines` loads the last 60 min and subscribes to realtime appends. MapCanvas renders each trail as a GeoJSON `LineString` with a `line-gradient` fade from transparent at the oldest end to solid Earthy Brown at the current position.
 
 ### ✅ Per-user notification preferences — shipped
 `notification_prefs` jsonb on `profiles` (migration 0010). Every fanout trigger now checks `public.wants_notification(user_id, kind)` before inserting. Settings screen exposes a toggle per kind, live-synced to the column. Default is permissive (missing key = enabled).

@@ -3,13 +3,15 @@ import type { AppNotification, NotificationKind } from './types';
 
 export type NotificationPrefs = Partial<Record<NotificationKind, boolean>>;
 
+// Kinds the user can toggle in Settings. `user_joined` was dropped from
+// the fanout in migration 0012 — keeping the enum value in types for
+// historical rows but no longer exposing a preference for it.
 export const ALL_KINDS: NotificationKind[] = [
   'critical_observation',
   'task_assigned',
   'message',
   'connection_request',
   'sync_issue',
-  'user_joined',
 ];
 
 type Remote = {

@@ -150,15 +150,11 @@ export default function Settings() {
                       onClick={() => togglePref(kind)}
                       role="switch"
                       aria-checked={on}
-                      className={`relative h-7 w-12 rounded-full transition-colors ${
-                        on ? 'bg-primary' : 'bg-outline-variant'
+                      className={`flex h-7 w-12 shrink-0 items-center rounded-full p-1 transition-colors ${
+                        on ? 'justify-end bg-primary' : 'justify-start bg-outline-variant'
                       }`}
                     >
-                      <span
-                        className={`absolute top-0.5 h-6 w-6 rounded-full bg-surface-container-lowest shadow transition-transform ${
-                          on ? 'translate-x-5' : 'translate-x-0.5'
-                        }`}
-                      />
+                      <span className="h-5 w-5 rounded-full bg-white shadow-md" />
                     </button>
                   </li>
                 );

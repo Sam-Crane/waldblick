@@ -11,6 +11,7 @@ import MapScreen from '@/screens/MapScreen';
 import AddObservation from '@/screens/AddObservation';
 import TaskList from '@/screens/TaskList';
 import ObservationDetails from '@/screens/ObservationDetails';
+import NavigateTo from '@/screens/NavigateTo';
 import Dashboard from '@/screens/Dashboard';
 import Profile from '@/screens/Profile';
 import Settings from '@/screens/Settings';
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="/tasks" element={<TaskList />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/observations/:id" element={<ObservationDetails />} />
+            <Route path="/observations/:id/navigate" element={<NavigateTo />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/messages/:id" element={<Conversation />} />
             <Route path="/connect" element={<Connect />} />

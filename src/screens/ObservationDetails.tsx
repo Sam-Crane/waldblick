@@ -48,13 +48,22 @@ export default function ObservationDetails() {
           </button>
         }
         trailing={
-          <button
-            onClick={() => setShareOpen(true)}
-            className="touch-safe flex items-center justify-center rounded-full hover:bg-surface-container"
-            aria-label={t('share.title')}
-          >
-            <span className="material-symbols-outlined text-primary-container">share</span>
-          </button>
+          <>
+            <button
+              onClick={() => navigate(`/observations/${observation.id}/navigate`)}
+              className="touch-safe flex items-center justify-center rounded-full hover:bg-surface-container"
+              aria-label={t('navigate.title')}
+            >
+              <span className="material-symbols-outlined text-primary-container">navigation</span>
+            </button>
+            <button
+              onClick={() => setShareOpen(true)}
+              className="touch-safe flex items-center justify-center rounded-full hover:bg-surface-container"
+              aria-label={t('share.title')}
+            >
+              <span className="material-symbols-outlined text-primary-container">share</span>
+            </button>
+          </>
         }
       />
 

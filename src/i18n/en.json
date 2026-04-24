@@ -79,6 +79,21 @@
     "unknown": "Location error.",
     "lowAccuracy": "Low accuracy (±{m} m). Turn on \u201cPrecise Location\u201d in iOS settings."
   },
+  "navigate": {
+    "title": "Navigate here",
+    "acquiring": "Getting your location…",
+    "accuracy": "GPS accuracy ±{m} m",
+    "arrived": "You're here",
+    "startWalking": "Start walking — the arrow aligns with your direction of travel.",
+    "enableCompass": "Enable compass",
+    "target": "Target",
+    "err": {
+      "noGeolocation": "Location service unavailable.",
+      "permissionDenied": "Location access denied.",
+      "timeout": "Location timed out.",
+      "unavailable": "Location currently unavailable."
+    }
+  },
   "directions": {
     "hint": "Long-press the map to get directions",
     "loading": "Calculating route…",

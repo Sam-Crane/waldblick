@@ -79,6 +79,21 @@
     "unknown": "Standort-Fehler.",
     "lowAccuracy": "Ungenaue Position (±{m} m). \u201ePrecise Location\u201c in iOS-Einstellungen aktivieren."
   },
+  "navigate": {
+    "title": "Hin navigieren",
+    "acquiring": "Standort wird ermittelt…",
+    "accuracy": "GPS-Genauigkeit ±{m} m",
+    "arrived": "Am Ziel",
+    "startWalking": "Bitte loslaufen — der Pfeil richtet sich an Ihrer Bewegungsrichtung aus.",
+    "enableCompass": "Kompass aktivieren",
+    "target": "Ziel",
+    "err": {
+      "noGeolocation": "Standortdienst nicht verfügbar.",
+      "permissionDenied": "Standort-Zugriff verweigert.",
+      "timeout": "Standort-Ermittlung hat zu lange gedauert.",
+      "unavailable": "Standort derzeit nicht verfügbar."
+    }
+  },
   "directions": {
     "hint": "Lange auf die Karte drücken für Navigation",
     "loading": "Route wird berechnet…",

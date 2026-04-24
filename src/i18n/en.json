@@ -1,0 +1,211 @@
+{
+  "nav": {
+    "map": "Map",
+    "record": "Record",
+    "tasks": "Tasks",
+    "messages": "Chat",
+    "dashboard": "Overview"
+  },
+  "common": {
+    "back": "Back"
+  },
+  "splash": {
+    "tagline": "Forest management, simplified",
+    "loading": "Loading…"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "name": "Name",
+    "role": "Role",
+    "forestName": "Forest",
+    "noAccount": "No account yet?",
+    "haveAccount": "Already registered?",
+    "createAccount": "Create account",
+    "forgotPassword": "Forgot password?",
+    "passwordHint": "At least 8 characters.",
+    "passwordTooShort": "Password must be at least 8 characters.",
+    "passwordMismatch": "Passwords do not match.",
+    "supabaseMissing": "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.",
+    "demoMode": "Demo mode · Supabase not configured",
+    "signin": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to open your forest.",
+      "button": "Sign In",
+      "busy": "Signing in…"
+    },
+    "signup": {
+      "title": "Create account",
+      "subtitle": "For forest owners, foresters, and contractors.",
+      "button": "Register",
+      "busy": "Creating…",
+      "sentTitle": "Confirmation sent",
+      "sentSubtitle": "We sent a confirmation link to {email}.",
+      "sentBody": "Open your email and tap the link to activate your account."
+    },
+    "forgot": {
+      "title": "Reset password",
+      "subtitle": "We'll send you a reset link.",
+      "button": "Send link",
+      "busy": "Sending…",
+      "sent": "Link sent to {email}. Check your email."
+    },
+    "reset": {
+      "title": "Set new password",
+      "subtitle": "Choose a strong password.",
+      "button": "Save password",
+      "busy": "Saving…"
+    }
+  },
+  "map": {
+    "title": "Forest Map",
+    "coordinates": "Coordinates",
+    "placeholder": "Map loads in Phase 2 (MapLibre + BayernAtlas + LfU).",
+    "inventoryScan": "Inventory Scan",
+    "inventoryCounts": "{total} observations · {critical} critical",
+    "layer": {
+      "satellite": "Satellite",
+      "dtk500": "Topo 1:500k",
+      "dok": "Digital Topo",
+      "alkisParzellar": "Parcel Map",
+      "alkisTn": "Land Use (ALKIS)",
+      "uebk25": "Soil Map 1:25k",
+      "buek200": "Soil Overview 1:200k",
+      "hk100": "Hydrogeology"
+    }
+  },
+  "record": {
+    "title": "New Observation",
+    "addPhoto": "Add Photo",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe conditions, species, or issues…",
+    "category": "Category",
+    "priority": "Priority",
+    "location": "Location",
+    "captureLocation": "Capture GPS Position",
+    "locating": "Locating…",
+    "submit": "Save Observation"
+  },
+  "priority": {
+    "critical": "Critical",
+    "medium": "Monitoring",
+    "low": "Stable"
+  },
+  "category": {
+    "beetle": "Bark Beetle",
+    "thinning": "Thinning",
+    "reforestation": "Reforestation",
+    "windthrow": "Windthrow",
+    "erosion": "Erosion",
+    "machine": "Machine",
+    "other": "Other"
+  },
+  "filters": {
+    "priority": "Priority",
+    "category": "Category",
+    "proximity": "Nearby",
+    "dateTitle": "Date Range",
+    "date": {
+      "all": "All time",
+      "today": "Today",
+      "7d": "7 days",
+      "30d": "30 days"
+    },
+    "needsGps": "GPS needed to sort by proximity."
+  },
+  "tasks": {
+    "title": "Forest Tasks",
+    "filter": "Filters",
+    "clear": "Clear",
+    "count": "{n} results",
+    "empty": "No observations yet. Tap Record to capture your first.",
+    "noMatch": "No results for this filter."
+  },
+  "details": {
+    "title": "Observation Details",
+    "id": "ID",
+    "date": "Date",
+    "time": "Time",
+    "coordinates": "Coordinates",
+    "description": "Description",
+    "category": "Category",
+    "takeAction": "Take Action",
+    "notFound": "Observation not found."
+  },
+  "dashboard": {
+    "title": "Inventory Scan",
+    "filter": "Filter",
+    "add": "Add",
+    "health": "Operational Health",
+    "activeObservations": "Active Observations",
+    "urgent": "Urgent Alerts",
+    "recent": "Recent Logs",
+    "empty": "No entries yet.",
+    "newObservation": "New Observation"
+  },
+  "messages": {
+    "title": "Messages",
+    "empty": "No conversations yet.",
+    "connect": "Connect",
+    "notFound": "Conversation not found.",
+    "placeholder": "Write a message…",
+    "send": "Send"
+  },
+  "time": {
+    "now": "now",
+    "m": "{n}m ago",
+    "h": "{n}h ago",
+    "d": "{n}d ago"
+  },
+  "connect": {
+    "title": "Connect user",
+    "yourCode": "Your invite code",
+    "copy": "Copy",
+    "copied": "Code copied.",
+    "copyFailed": "Copy failed.",
+    "shareHint": "Share the code with your contractor or colleague.",
+    "enterCode": "Enter code",
+    "send": "Send",
+    "requestSent": "Request sent to {code}.",
+    "suggested": "Suggested contacts",
+    "connect": "Connect"
+  },
+  "notifications": {
+    "open": "Open notifications",
+    "title": "Notifications",
+    "empty": "No new notifications.",
+    "markAll": "Mark all read"
+  },
+  "profile": {
+    "menu": "Profile menu",
+    "title": "Profile",
+    "viewProfile": "View Profile",
+    "connect": "Connect user",
+    "settings": "Settings",
+    "logout": "Sign Out",
+    "email": "Email",
+    "forest": "Forest",
+    "role": "Role"
+  },
+  "role": {
+    "owner": "Forest Owner",
+    "forester": "Forester",
+    "contractor": "Contractor",
+    "operator": "Machine Operator"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "lang": { "de": "Deutsch", "en": "English" },
+    "offline": "Offline Data",
+    "syncStatus": "Sync",
+    "syncComingSoon": "Coming in Phase 3",
+    "clearLocal": "Clear Local Data",
+    "clearConfirm": "This removes all locally stored observations and photos. Continue?",
+    "about": "About",
+    "version": "Version",
+    "license": "License"
+  }
+}

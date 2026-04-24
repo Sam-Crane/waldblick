@@ -1,0 +1,211 @@
+{
+  "nav": {
+    "map": "Karte",
+    "record": "Aufnehmen",
+    "tasks": "Aufgaben",
+    "messages": "Chat",
+    "dashboard": "Übersicht"
+  },
+  "common": {
+    "back": "Zurück"
+  },
+  "splash": {
+    "tagline": "Waldverwaltung leicht gemacht",
+    "loading": "Wird geladen…"
+  },
+  "auth": {
+    "email": "E-Mail",
+    "password": "Passwort",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "name": "Name",
+    "role": "Rolle",
+    "forestName": "Revier",
+    "noAccount": "Noch kein Konto?",
+    "haveAccount": "Bereits registriert?",
+    "createAccount": "Konto erstellen",
+    "forgotPassword": "Passwort vergessen?",
+    "passwordHint": "Mindestens 8 Zeichen.",
+    "passwordTooShort": "Passwort muss mindestens 8 Zeichen lang sein.",
+    "passwordMismatch": "Passwörter stimmen nicht überein.",
+    "supabaseMissing": "Supabase ist nicht konfiguriert. VITE_SUPABASE_URL und VITE_SUPABASE_ANON_KEY in .env setzen.",
+    "demoMode": "Demo-Modus · Supabase nicht konfiguriert",
+    "signin": {
+      "title": "Willkommen zurück",
+      "subtitle": "Melden Sie sich an, um Ihr Revier zu öffnen.",
+      "button": "Anmelden",
+      "busy": "Wird angemeldet…"
+    },
+    "signup": {
+      "title": "Konto erstellen",
+      "subtitle": "Für Waldbesitzer, Förster und Unternehmer.",
+      "button": "Registrieren",
+      "busy": "Wird erstellt…",
+      "sentTitle": "Bestätigung gesendet",
+      "sentSubtitle": "Wir haben einen Bestätigungslink an {email} gesendet.",
+      "sentBody": "Öffnen Sie Ihre E-Mail und tippen Sie auf den Link, um Ihr Konto zu aktivieren."
+    },
+    "forgot": {
+      "title": "Passwort zurücksetzen",
+      "subtitle": "Wir senden Ihnen einen Link zum Zurücksetzen.",
+      "button": "Link senden",
+      "busy": "Wird gesendet…",
+      "sent": "Link an {email} gesendet. Öffnen Sie Ihre E-Mail."
+    },
+    "reset": {
+      "title": "Neues Passwort setzen",
+      "subtitle": "Wählen Sie ein starkes Passwort.",
+      "button": "Passwort speichern",
+      "busy": "Wird gespeichert…"
+    }
+  },
+  "map": {
+    "title": "Waldkarte",
+    "coordinates": "Koordinaten",
+    "placeholder": "Karte wird in Phase 2 geladen (MapLibre + BayernAtlas + LfU).",
+    "inventoryScan": "Bestandsübersicht",
+    "inventoryCounts": "{total} Beobachtungen · {critical} kritisch",
+    "layer": {
+      "satellite": "Satellit",
+      "dtk500": "Topo 1:500k",
+      "dok": "Digitale Topo",
+      "alkisParzellar": "Parzellarkarte",
+      "alkisTn": "Nutzung (ALKIS)",
+      "uebk25": "Bodenkarte 1:25k",
+      "buek200": "Bodenübersicht 1:200k",
+      "hk100": "Hydrogeologie"
+    }
+  },
+  "record": {
+    "title": "Neue Beobachtung",
+    "addPhoto": "Foto hinzufügen",
+    "description": "Beschreibung",
+    "descriptionPlaceholder": "Zustand, Art oder Problem beschreiben…",
+    "category": "Kategorie",
+    "priority": "Priorität",
+    "location": "Standort",
+    "captureLocation": "GPS-Position aufnehmen",
+    "locating": "GPS wird ermittelt…",
+    "submit": "Beobachtung speichern"
+  },
+  "priority": {
+    "critical": "Kritisch",
+    "medium": "Beobachten",
+    "low": "Stabil"
+  },
+  "category": {
+    "beetle": "Borkenkäfer",
+    "thinning": "Durchforstung",
+    "reforestation": "Wiederaufforstung",
+    "windthrow": "Sturmschaden",
+    "erosion": "Erosion",
+    "machine": "Maschine",
+    "other": "Sonstiges"
+  },
+  "filters": {
+    "priority": "Priorität",
+    "category": "Kategorie",
+    "proximity": "Nähe",
+    "dateTitle": "Zeitraum",
+    "date": {
+      "all": "Alle",
+      "today": "Heute",
+      "7d": "7 Tage",
+      "30d": "30 Tage"
+    },
+    "needsGps": "GPS benötigt, um nach Nähe zu sortieren."
+  },
+  "tasks": {
+    "title": "Waldaufgaben",
+    "filter": "Filter",
+    "clear": "Zurücksetzen",
+    "count": "{n} Ergebnisse",
+    "empty": "Noch keine Beobachtungen. Tippen Sie auf \u201eAufnehmen\u201c, um die erste zu erfassen.",
+    "noMatch": "Keine Treffer für diesen Filter."
+  },
+  "details": {
+    "title": "Beobachtung",
+    "id": "ID",
+    "date": "Datum",
+    "time": "Uhrzeit",
+    "coordinates": "Koordinaten",
+    "description": "Beschreibung",
+    "category": "Kategorie",
+    "takeAction": "Maßnahme ergreifen",
+    "notFound": "Beobachtung nicht gefunden."
+  },
+  "dashboard": {
+    "title": "Bestandsübersicht",
+    "filter": "Filter",
+    "add": "Neu",
+    "health": "Bestandsgesundheit",
+    "activeObservations": "Aktive Beobachtungen",
+    "urgent": "Dringende Meldungen",
+    "recent": "Neueste Einträge",
+    "empty": "Noch keine Einträge.",
+    "newObservation": "Neue Beobachtung"
+  },
+  "messages": {
+    "title": "Nachrichten",
+    "empty": "Noch keine Unterhaltungen.",
+    "connect": "Verbinden",
+    "notFound": "Unterhaltung nicht gefunden.",
+    "placeholder": "Nachricht schreiben…",
+    "send": "Senden"
+  },
+  "time": {
+    "now": "jetzt",
+    "m": "vor {n} Min",
+    "h": "vor {n} Std",
+    "d": "vor {n} Tagen"
+  },
+  "connect": {
+    "title": "Nutzer verbinden",
+    "yourCode": "Ihr Einladungscode",
+    "copy": "Kopieren",
+    "copied": "Code kopiert.",
+    "copyFailed": "Kopieren nicht möglich.",
+    "shareHint": "Teilen Sie den Code mit Ihrem Unternehmer oder Kollegen.",
+    "enterCode": "Code eingeben",
+    "send": "Senden",
+    "requestSent": "Anfrage an {code} gesendet.",
+    "suggested": "Vorgeschlagene Kontakte",
+    "connect": "Verbinden"
+  },
+  "notifications": {
+    "open": "Benachrichtigungen öffnen",
+    "title": "Benachrichtigungen",
+    "empty": "Keine neuen Benachrichtigungen.",
+    "markAll": "Alle gelesen"
+  },
+  "profile": {
+    "menu": "Profilmenü",
+    "title": "Profil",
+    "viewProfile": "Profil anzeigen",
+    "connect": "Nutzer verbinden",
+    "settings": "Einstellungen",
+    "logout": "Abmelden",
+    "email": "E-Mail",
+    "forest": "Revier",
+    "role": "Rolle"
+  },
+  "role": {
+    "owner": "Waldbesitzer",
+    "forester": "Förster",
+    "contractor": "Unternehmer",
+    "operator": "Maschinenführer"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "language": "Sprache",
+    "lang": { "de": "Deutsch", "en": "English" },
+    "offline": "Offline-Daten",
+    "syncStatus": "Synchronisation",
+    "syncComingSoon": "Kommt in Phase 3",
+    "clearLocal": "Lokale Daten löschen",
+    "clearConfirm": "Alle lokal gespeicherten Beobachtungen und Fotos werden entfernt. Fortfahren?",
+    "about": "Über",
+    "version": "Version",
+    "license": "Lizenz"
+  }
+}

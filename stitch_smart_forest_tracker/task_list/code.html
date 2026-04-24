@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Public Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#ffdad6",
+                        "tertiary": "#4f1c00",
+                        "secondary-container": "#fed5b6",
+                        "tertiary-fixed-dim": "#ffb693",
+                        "on-primary-fixed": "#062014",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#263142",
+                        "on-primary": "#ffffff",
+                        "surface-dim": "#cfdaf1",
+                        "inverse-primary": "#b0cdbb",
+                        "on-surface": "#111c2c",
+                        "inverse-on-surface": "#ebf1ff",
+                        "tertiary-fixed": "#ffdbcc",
+                        "on-secondary-fixed-variant": "#5c412a",
+                        "outline": "#727973",
+                        "surface-variant": "#d8e3fa",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#dee8ff",
+                        "primary": "#173124",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-container": "#ff9159",
+                        "surface-tint": "#496455",
+                        "on-primary-container": "#98b5a3",
+                        "primary-fixed": "#ccead6",
+                        "on-secondary-fixed": "#2b1704",
+                        "surface-container-low": "#f0f3ff",
+                        "primary-container": "#2d4739",
+                        "secondary-fixed": "#ffdcc1",
+                        "outline-variant": "#c2c8c2",
+                        "tertiary-container": "#722c00",
+                        "on-primary-fixed-variant": "#324c3e",
+                        "on-background": "#111c2c",
+                        "on-secondary-container": "#795b42",
+                        "on-tertiary-fixed-variant": "#7a3000",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f9f9ff",
+                        "surface-bright": "#f9f9ff",
+                        "on-error": "#ffffff",
+                        "background": "#f9f9ff",
+                        "on-surface-variant": "#424844",
+                        "on-tertiary-fixed": "#351000",
+                        "surface-container": "#e7eeff",
+                        "surface-container-highest": "#d8e3fa",
+                        "secondary-fixed-dim": "#e6bfa1",
+                        "secondary": "#765840",
+                        "primary-fixed-dim": "#b0cdbb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-main": "1.25rem",
+                        "gutter-grid": "1rem",
+                        "stack-lg": "1.5rem",
+                        "touch-target": "3rem",
+                        "stack-sm": "0.5rem",
+                        "stack-md": "1rem"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-5 h-16 bg-white dark:bg-stone-950 border-b-[1px] border-[#E2E8F0] dark:border-stone-800">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#2D4739] dark:text-emerald-500" data-icon="forest">forest</span>
+<h1 class="text-lg font-bold text-[#2D4739] dark:text-emerald-400 font-['Public_Sans'] tracking-tight">Forest Tasks</h1>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900 transition-colors text-stone-500">
+<span class="material-symbols-outlined" data-icon="search">search</span>
+</button>
+<button class="p-2 rounded-md hover:bg-stone-100 dark:hover:bg-stone-900 transition-colors text-stone-500">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<main class="pt-20 px-margin-main max-w-2xl mx-auto">
+<!-- Filter Bar -->
+<section class="mb-stack-lg">
+<div class="flex items-center justify-between mb-stack-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase">Filter Observations</span>
+<span class="font-label-sm text-label-sm text-outline">14 RESULTS</span>
+</div>
+<div class="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+<button class="flex items-center gap-2 px-4 py-2 bg-primary-container text-white rounded-lg whitespace-nowrap text-label-md font-label-md">
+<span class="material-symbols-outlined text-[18px]" data-icon="priority_high">priority_high</span>
+                    Priority
+                </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white border border-[#E2E8F0] text-on-surface-variant rounded-lg whitespace-nowrap text-label-md font-label-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="calendar_today">calendar_today</span>
+                    Date
+                </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white border border-[#E2E8F0] text-on-surface-variant rounded-lg whitespace-nowrap text-label-md font-label-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="near_me">near_me</span>
+                    Proximity
+                </button>
+<button class="flex items-center gap-2 px-4 py-2 bg-white border border-[#E2E8F0] text-on-surface-variant rounded-lg whitespace-nowrap text-label-md font-label-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="filter_list">filter_list</span>
+                    Category
+                </button>
+</div>
+</section>
+<!-- Task List -->
+<div class="flex flex-col gap-4">
+<!-- Task Card 1: Critical -->
+<div class="bg-white border border-[#E2E8F0] rounded-lg overflow-hidden flex items-stretch min-h-[120px] shadow-sm relative">
+<div class="w-1 bg-[#ba1a1a] absolute left-0 top-0 bottom-0"></div>
+<div class="w-28 flex-shrink-0 relative overflow-hidden">
+<img alt="Tree disease detail" class="w-full h-full object-cover" data-alt="Close-up of pine tree bark showing severe beetle infestation and resin flow in a dense forest setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_uYb_d6b6cXcPhcOSErrpRMr-neRHQLqrvQ2CvYIQs51R3WmP0QrMD5gvsdh1ZvugUTZQhTd6tdy4TcD1Fst9LTI7xPqQ28d3YQZUtG0-t8UkGzi6wMJuDiN5DPv9IZjy63nBwlZ5ZEJmGl2WcyCI_7jUb1AiVfpOldAix2s6yQkFI-RFPqbxtQeEckbk5ysa3HCLkx-9Wbw9lnY6yYuyj8y-o7g2SnWnE6k00jV7BJbkMM-wMbSd8VDZ32mZaIh2DYa_o1zIQEP7"/>
+</div>
+<div class="flex-grow p-4 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-1">
+<span class="bg-[#ba1a1a] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Critical</span>
+<span class="text-label-sm font-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="location_on">location_on</span>
+                                0.4 mi
+                            </span>
+</div>
+<h3 class="font-headline-md text-body-md text-on-surface font-bold leading-tight">Bark Beetle Infestation</h3>
+<p class="text-label-md text-on-surface-variant line-clamp-2 mt-1">Severe signs of pine beetle activity detected in the Northeast quadrant. Immediate quarantine recommended.</p>
+</div>
+</div>
+</div>
+<!-- Task Card 2: Monitoring -->
+<div class="bg-white border border-[#E2E8F0] rounded-lg overflow-hidden flex items-stretch min-h-[120px] shadow-sm relative">
+<div class="w-1 bg-tertiary absolute left-0 top-0 bottom-0"></div>
+<div class="w-28 flex-shrink-0 relative overflow-hidden">
+<img alt="Forest path" class="w-full h-full object-cover" data-alt="Low-angle view of a sun-dappled forest floor with thick leaf mulch and young saplings growing near a trail" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9YchBR4MP3qSpXk8vqAHBgkrC4pkUMFbsN5IWw4vyiZB96n4BWILE_5AvCesS7Zgv8Wumxls8E_7jk_vZP5HJMtIE5mAHsbGeW7sAWKZttYfuXWhJHRf_MyRRugrAZb_2WIxzZfwiFDkH3sYw1tj6sq2iS_XVXE_sWXBv_SxBhaP-Pe2afAp-1C1-XCm2TavMOCMh5tEKOH5cOZQEZ1_km64WTkzXj78H26lXnoHOnZob6pGYcAiMU49rdIIBaNTCn977cPdNU1pm"/>
+</div>
+<div class="flex-grow p-4 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-1">
+<span class="bg-tertiary text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Monitoring</span>
+<span class="text-label-sm font-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="location_on">location_on</span>
+                                1.2 mi
+                            </span>
+</div>
+<h3 class="font-headline-md text-body-md text-on-surface font-bold leading-tight">Sapling Growth Survey</h3>
+<p class="text-label-md text-on-surface-variant line-clamp-2 mt-1">Measure height and girth of marked oak saplings in Plot B-14. Check for deer fence integrity.</p>
+</div>
+</div>
+</div>
+<!-- Task Card 3: Stable -->
+<div class="bg-white border border-[#E2E8F0] rounded-lg overflow-hidden flex items-stretch min-h-[120px] shadow-sm relative">
+<div class="w-1 bg-primary-container absolute left-0 top-0 bottom-0"></div>
+<div class="w-28 flex-shrink-0 relative overflow-hidden">
+<img alt="Timber stack" class="w-full h-full object-cover" data-alt="Neatly stacked pile of harvested timber logs in a clearing with dramatic sunlight and shadows" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCQSiA60eX8K-nafGf6tLPWxwLVtoqBTzXOXvt9LCrQXbt9ZjEc32Slmzi5rkN4Im2_3ecQ5plujfKc7tpZMR7HMtqbL3_J-Y7oKQ67b_jqyYCPM_KNUa9eEuHiJSlqDMnBzQCvtgH8S2loi3ZQduGBpZa8eUXj9mNIWbbSjKzfNnAcNsRKjwEOOFKS_t-YdEpSIwPBczGw3JLk3dW3YCuVxXs8IXW5fysPa2jLsqFzIJ330hH2LKuFQ_uEosVlCGfxykm2EBsHqIp"/>
+</div>
+<div class="flex-grow p-4 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-1">
+<span class="bg-primary-container text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Stable</span>
+<span class="text-label-sm font-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="location_on">location_on</span>
+                                2.8 mi
+                            </span>
+</div>
+<h3 class="font-headline-md text-body-md text-on-surface font-bold leading-tight">Log Inventory Audit</h3>
+<p class="text-label-md text-on-surface-variant line-clamp-2 mt-1">Final count and tag verification for the South Clearing harvest batch. Ensure GPS data sync.</p>
+</div>
+</div>
+</div>
+<!-- Task Card 4: Critical -->
+<div class="bg-white border border-[#E2E8F0] rounded-lg overflow-hidden flex items-stretch min-h-[120px] shadow-sm relative">
+<div class="w-1 bg-[#ba1a1a] absolute left-0 top-0 bottom-0"></div>
+<div class="w-28 flex-shrink-0 relative overflow-hidden">
+<img alt="Eroded slope" class="w-full h-full object-cover" data-alt="Wide shot of a forested hillside with visible soil erosion and exposed roots after heavy rainfall" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBTOG4cFpnj8JWSXGVF5nvt7J0oWUPVn0oYURDcSnG6on-l5kf5RbiUhR3lJymzQD2LkWeKnDkzy5vLKQxsl8m6QvCxpDx6lffo7UyvUUmTbR24fe5Ver6MM5imvMNy5V6DK03WtyzzbCDBKN2x0YyOAmle1pdXskS1wlaUz9E1f1M7WwNXYFz6WcaNZ_1-zoF2G36GQW9Fk2IgC_BA-VmvP3-saUM-HdTigaDke5ufaNOlBgIVbDyaqcPT5vk2xtI_mhfwPKGCCMFf"/>
+</div>
+<div class="flex-grow p-4 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start mb-1">
+<span class="bg-[#ba1a1a] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Critical</span>
+<span class="text-label-sm font-label-sm text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="location_on">location_on</span>
+                                4.1 mi
+                            </span>
+</div>
+<h3 class="font-headline-md text-body-md text-on-surface font-bold leading-tight">Washout Structural Check</h3>
+<p class="text-label-md text-on-surface-variant line-clamp-2 mt-1">Erosion reported near Access Road 4. Assess risk to culvert and bridge stability.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Compass Overlay (Specialized Component) -->
+<div class="fixed bottom-24 right-5 bg-slate-800/90 text-white rounded-lg p-3 flex flex-col items-center gap-1 backdrop-blur-md shadow-lg border border-white/10">
+<span class="material-symbols-outlined text-[24px]" data-icon="explore">explore</span>
+<span class="font-mono text-[10px] font-bold tracking-tight">47° N</span>
+</div>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-2 pb-safe bg-white dark:bg-stone-950 h-20 border-t-[1px] border-[#E2E8F0] dark:border-stone-800 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 py-1 w-16 active:scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-['Public_Sans'] text-[11px] font-medium uppercase tracking-wider mt-1">Map</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 py-1 w-16 active:scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="add_a_photo">add_a_photo</span>
+<span class="font-['Public_Sans'] text-[11px] font-medium uppercase tracking-wider mt-1">Record</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#2D4739] dark:text-emerald-400 bg-stone-100 dark:bg-emerald-900/20 rounded-md py-1 w-16 active:scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="assignment" style="font-variation-settings: 'FILL' 1;">assignment</span>
+<span class="font-['Public_Sans'] text-[11px] font-medium uppercase tracking-wider mt-1">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-stone-500 dark:text-stone-400 py-1 w-16 active:scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" data-icon="info">info</span>
+<span class="font-['Public_Sans'] text-[11px] font-medium uppercase tracking-wider mt-1">Details</span>
+</a>
+</nav>
+</body></html>

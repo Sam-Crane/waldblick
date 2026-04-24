@@ -13,6 +13,7 @@ import DownloadAreaButton from '@/map/DownloadAreaButton';
 import { combinedBounds } from '@/map/bbox';
 import { useMachines } from '@/data/useMachines';
 import { useCurrentUser } from '@/data/currentUser';
+import { useToast } from '@/components/Toast';
 import { db } from '@/data/db';
 import { plotsRepo } from '@/data/plotsRepo';
 import type { Plot, Priority } from '@/data/types';
@@ -58,6 +59,7 @@ type RouteState =
 export default function MapScreen() {
   const t = useTranslation();
   const me = useCurrentUser();
+  const toast = useToast();
   const location = useLocation() as { state?: { focusPlotId?: string } };
   const observations = useLiveQuery(() => db.observations.toArray(), []) ?? [];
 
@@ -194,6 +196,23 @@ export default function MapScreen() {
             showMachines={layerState.showMachines}
             onMarkerTap={setSelectedId}
             onLongPress={onLongPress}
+            onGeolocateError={(code, message) => {
+              // 1=PERMISSION_DENIED, 2=POSITION_UNAVAILABLE, 3=TIMEOUT.
+              // Each gets a distinct i18n key so the user knows exactly what
+              // to fix (settings vs signal vs retry).
+              const key =
+                code === 1
+                  ? 'geolocate.permissionDenied'
+                  : code === 2
+                    ? 'geolocate.positionUnavailable'
+                    : code === 3
+                      ? 'geolocate.timeout'
+                      : 'geolocate.unknown';
+              toast.error(`${t(key)}${code ? ` (${message})` : ''}`);
+            }}
+            onGeolocateSuccess={(accuracy) => {
+              if (accuracy > 500) toast.show(t('geolocate.lowAccuracy', { m: Math.round(accuracy) }), { tone: 'warning' });
+            }}
             routeCoords={route.kind === 'ready' ? route.route.coordinates : undefined}
           />
 

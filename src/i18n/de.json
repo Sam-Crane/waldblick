@@ -72,6 +72,13 @@
     "downloadOnly": "Nur auf Anfrage offline",
     "attributionNote": "Ebenen werden beim Aktivieren von den jeweiligen Diensten geladen. Offline-Verfügbarkeit abhängig vom lokalen Cache."
   },
+  "geolocate": {
+    "permissionDenied": "Standort-Zugriff verweigert. In den Browser-Einstellungen wieder zulassen.",
+    "positionUnavailable": "Standort nicht verfügbar — kein GPS-Empfang.",
+    "timeout": "Standort-Ermittlung hat zu lange gedauert. Draußen erneut versuchen.",
+    "unknown": "Standort-Fehler.",
+    "lowAccuracy": "Ungenaue Position (±{m} m). \u201ePrecise Location\u201c in iOS-Einstellungen aktivieren."
+  },
   "directions": {
     "hint": "Lange auf die Karte drücken für Navigation",
     "loading": "Route wird berechnet…",

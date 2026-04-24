@@ -72,6 +72,13 @@
     "downloadOnly": "Offline on request only",
     "attributionNote": "Layers load from their respective services when enabled. Offline availability depends on local cache."
   },
+  "geolocate": {
+    "permissionDenied": "Location access denied. Re-enable it in your browser settings.",
+    "positionUnavailable": "Location unavailable — no GPS signal.",
+    "timeout": "Location took too long. Try again outside.",
+    "unknown": "Location error.",
+    "lowAccuracy": "Low accuracy (±{m} m). Turn on \u201cPrecise Location\u201d in iOS settings."
+  },
   "directions": {
     "hint": "Long-press the map to get directions",
     "loading": "Calculating route…",

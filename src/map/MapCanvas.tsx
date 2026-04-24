@@ -22,6 +22,8 @@ type Props = {
   showMachines?: boolean;
   onMarkerTap: (id: string) => void;
   onLongPress?: (latlng: { lat: number; lng: number }) => void;
+  onGeolocateError?: (code: number, message: string) => void;
+  onGeolocateSuccess?: (accuracy: number) => void;
   routeCoords?: [number, number][]; // [lng, lat][]
   initialCenter?: { lat: number; lng: number };
 };
@@ -68,6 +70,8 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     showMachines = true,
     onMarkerTap,
     onLongPress,
+    onGeolocateError,
+    onGeolocateSuccess,
     routeCoords,
     initialCenter,
   },
@@ -123,11 +127,27 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
 
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
     const geolocate = new maplibregl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
+      // Explicit timeout + maximumAge so the control can't hang indefinitely.
+      // enableHighAccuracy=true asks for GPS; if it's slow (indoors, weak signal)
+      // the 15s ceiling kicks in and the error event fires so the UI can recover.
+      positionOptions: { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
       trackUserLocation: true,
       showAccuracyCircle: true,
+      showUserLocation: true,
     });
     map.addControl(geolocate, 'top-right');
+    if (onGeolocateError) {
+      geolocate.on('error', (e) => {
+        const err = e as GeolocationPositionError;
+        onGeolocateError(err.code ?? 0, err.message ?? 'geolocation failed');
+      });
+    }
+    if (onGeolocateSuccess) {
+      geolocate.on('geolocate', (e) => {
+        const pos = e as GeolocationPosition;
+        onGeolocateSuccess(pos.coords.accuracy);
+      });
+    }
     map.addControl(new maplibregl.ScaleControl({ maxWidth: 120, unit: 'metric' }), 'bottom-left');
 
     map.on('load', () => {

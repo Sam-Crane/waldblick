@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import NotificationBell from './NotificationBell';
 import ProfileMenu from './ProfileMenu';
+import SyncStatus from '@/components/SyncStatus';
 
 type Variant = 'light' | 'dark';
 
@@ -36,6 +37,7 @@ export default function TopBar({
       </div>
       <div className="flex items-center gap-1">
         {trailing}
+        <SyncStatus variant={variant} />
         {showNotifications && <NotificationBell variant={variant} />}
         {showProfile && <ProfileMenu variant={variant} />}
       </div>

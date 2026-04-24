@@ -40,6 +40,7 @@ export type ObservationPhoto = {
   width?: number;
   height?: number;
   capturedAt: string;
+  storagePath?: string; // set once uploaded to Supabase Storage
 };
 
 export type SyncOp = {

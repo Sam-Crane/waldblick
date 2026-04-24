@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
 import InventoryStats from '@/components/InventoryStats';
-import MapCanvas from '@/map/MapCanvas';
+import MapCanvas, { type MapCanvasHandle } from '@/map/MapCanvas';
 import LayerPanel from '@/map/LayerPanel';
 import ObservationSheet from '@/map/ObservationSheet';
 import RouteCard from '@/map/RouteCard';
 import MapFilterBar from '@/map/MapFilterBar';
 import GeoDebugPill from '@/map/GeoDebugPill';
+import DownloadAreaButton from '@/map/DownloadAreaButton';
 import { db } from '@/data/db';
 import { PLOTS } from '@/data/mocks';
 import type { Priority } from '@/data/types';
@@ -58,6 +59,7 @@ export default function MapScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteState>({ kind: 'idle' });
   const [priorityFilter, setPriorityFilter] = useState<Set<Priority>>(new Set());
+  const mapRef = useRef<MapCanvasHandle>(null);
 
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
@@ -126,6 +128,7 @@ export default function MapScreen() {
       <div className="flex flex-1 overflow-hidden">
         <div className="relative flex-1">
           <MapCanvas
+            ref={mapRef}
             observations={visibleObservations}
             plots={PLOTS}
             baseLayerId={layerState.baseLayerId}
@@ -163,6 +166,11 @@ export default function MapScreen() {
           </div>
 
           <GeoDebugPill />
+
+          <DownloadAreaButton
+            getBounds={() => mapRef.current?.getBounds() ?? null}
+            activeLayerIds={[layerState.baseLayerId, ...layerState.activeOverlayIds]}
+          />
 
           {directionsEnabled && route.kind === 'idle' && (
             <div className="pointer-events-none absolute inset-x-0 bottom-4 z-0 flex justify-center">

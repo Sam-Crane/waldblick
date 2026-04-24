@@ -83,6 +83,23 @@
       "unknown": "Directions failed."
     }
   },
+  "sync": {
+    "synced": "Synced",
+    "running": "Syncing…",
+    "pending": "{n} pending",
+    "offline": "Offline · {n} pending",
+    "error": "Sync failed"
+  },
+  "update": {
+    "needRefresh": "New version available.",
+    "offlineReady": "App ready for offline use.",
+    "refresh": "Refresh"
+  },
+  "offline": {
+    "downloadArea": "Download area offline",
+    "progress": "Offline cache: {pct}%",
+    "aborted": "Aborted"
+  },
   "weather": {
     "title": "Weather & Site",
     "loading": "Loading weather…",

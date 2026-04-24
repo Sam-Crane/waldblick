@@ -1,6 +1,9 @@
 import { Route, Routes } from 'react-router-dom';
 import AppShell from '@/components/Layout/AppShell';
 import AuthGuard from '@/components/Layout/AuthGuard';
+import UpdatePrompt from '@/components/UpdatePrompt';
+import { useSyncDriver } from '@/data/syncEngine';
+import { useRealtimeSync } from '@/data/realtimeSync';
 import SplashScreen from '@/screens/SplashScreen';
 import MapScreen from '@/screens/MapScreen';
 import AddObservation from '@/screens/AddObservation';
@@ -18,31 +21,36 @@ import ForgotPassword from '@/screens/auth/ForgotPassword';
 import ResetPassword from '@/screens/auth/ResetPassword';
 
 export default function App() {
+  useSyncDriver();
+  useRealtimeSync();
   return (
-    <Routes>
-      <Route index element={<SplashScreen />} />
+    <>
+      <UpdatePrompt />
+      <Routes>
+        <Route index element={<SplashScreen />} />
 
-      {/* Public auth routes */}
-      <Route path="/signin" element={<SignIn />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Public auth routes */}
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Authenticated app */}
-      <Route element={<AuthGuard />}>
-        <Route element={<AppShell />}>
-          <Route path="/map" element={<MapScreen />} />
-          <Route path="/record" element={<AddObservation />} />
-          <Route path="/tasks" element={<TaskList />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/observations/:id" element={<ObservationDetails />} />
-          <Route path="/messages" element={<Messages />} />
-          <Route path="/messages/:id" element={<Conversation />} />
-          <Route path="/connect" element={<Connect />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
+        {/* Authenticated app */}
+        <Route element={<AuthGuard />}>
+          <Route element={<AppShell />}>
+            <Route path="/map" element={<MapScreen />} />
+            <Route path="/record" element={<AddObservation />} />
+            <Route path="/tasks" element={<TaskList />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/observations/:id" element={<ObservationDetails />} />
+            <Route path="/messages" element={<Messages />} />
+            <Route path="/messages/:id" element={<Conversation />} />
+            <Route path="/connect" element={<Connect />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }

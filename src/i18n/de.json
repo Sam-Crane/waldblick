@@ -83,6 +83,23 @@
       "unknown": "Navigation fehlgeschlagen."
     }
   },
+  "sync": {
+    "synced": "Synchronisiert",
+    "running": "Synchronisierung läuft…",
+    "pending": "{n} ausstehend",
+    "offline": "Offline · {n} ausstehend",
+    "error": "Synchronisierung fehlgeschlagen"
+  },
+  "update": {
+    "needRefresh": "Neue Version verfügbar.",
+    "offlineReady": "App ist offline verfügbar.",
+    "refresh": "Aktualisieren"
+  },
+  "offline": {
+    "downloadArea": "Bereich offline speichern",
+    "progress": "Offline-Cache: {pct}%",
+    "aborted": "Abgebrochen"
+  },
   "weather": {
     "title": "Wetter & Standort",
     "loading": "Wetterdaten werden geladen…",

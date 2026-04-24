@@ -1,4 +1,5 @@
 import { db } from './db';
+import { processPhoto } from './imagePipeline';
 import type { Category, Observation, Priority } from './types';
 
 type CreateInput = {
@@ -35,13 +36,17 @@ export const observationRepo = {
       updatedAt: now,
     };
 
+    const processed = input.photo ? await processPhoto(input.photo) : undefined;
+
     await db.transaction('rw', db.observations, db.photos, db.syncOps, async () => {
       await db.observations.add(observation);
-      if (input.photo) {
+      if (processed) {
         await db.photos.add({
           id: uuid(),
           observationId: id,
-          blob: input.photo,
+          blob: processed.blob,
+          width: processed.width,
+          height: processed.height,
           capturedAt: now,
         });
       }
@@ -55,6 +60,8 @@ export const observationRepo = {
       });
     });
 
+    // Kick off a sync attempt. If offline or Supabase unset, it no-ops safely.
+    void import('./syncEngine').then((m) => m.syncNow());
     return id;
   },
 

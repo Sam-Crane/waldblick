@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import maplibregl, { type Map, type Marker } from 'maplibre-gl';
 import type { Observation, Plot, Priority } from '@/data/types';
 import { LAYERS, layerById } from './layers';
 import { tilesTemplate } from './wms';
+
+export type MapCanvasHandle = {
+  getBounds: () => maplibregl.LngLatBounds | null;
+};
 
 type Props = {
   observations: Observation[];
@@ -31,18 +35,24 @@ const priorityColor: Record<Priority, string> = {
 const BASE_PREFIX = 'base-';
 const OVERLAY_PREFIX = 'overlay-';
 
-export default function MapCanvas({
-  observations,
-  plots = [],
-  baseLayerId,
-  activeOverlayIds,
-  showPlots = true,
-  showObservations = true,
-  onMarkerTap,
-  onLongPress,
-  routeCoords,
-  initialCenter,
-}: Props) {
+const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
+  {
+    observations,
+    plots = [],
+    baseLayerId,
+    activeOverlayIds,
+    showPlots = true,
+    showObservations = true,
+    onMarkerTap,
+    onLongPress,
+    routeCoords,
+    initialCenter,
+  },
+  handleRef,
+) {
+  useImperativeHandle(handleRef, () => ({
+    getBounds: () => mapRef.current?.getBounds() ?? null,
+  }));
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const markersRef = useRef<Marker[]>([]);
@@ -326,4 +336,6 @@ export default function MapCanvas({
   }, [observations, ready, onMarkerTap, showObservations]);
 
   return <div ref={ref} className="absolute inset-0" />;
-}
+});
+
+export default MapCanvas;

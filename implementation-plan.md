@@ -134,7 +134,7 @@ Done when: on a real phone, user can capture 5 observations offline, filter them
 
 Done when: on a real phone, user sees their observations and plot boundaries over satellite, can toggle BayernAtlas cadastral on to see parcel edges, can long-press to get driving directions, and can open the weather panel for any observation.
 
-### Phase 3 — Offline + sync (2 days)
+### Phase 3 — Offline + sync (2 days) ✅ COMPLETE
 
 This is where most products fail. Budget accordingly.
 

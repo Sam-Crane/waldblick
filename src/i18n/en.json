@@ -324,6 +324,7 @@
     "empty": "No plots defined yet.",
     "loading": "Loading…",
     "vertices": "vertices",
+    "viewOnMap": "View on map",
     "settingsHint": "Manage your forest plot boundaries.",
     "demoNote": "Demo mode shows sample plots. Creating real plots requires Supabase.",
     "parseErr": {

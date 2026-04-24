@@ -324,6 +324,7 @@
     "empty": "Noch keine Parzellen angelegt.",
     "loading": "Wird geladen…",
     "vertices": "Eckpunkte",
+    "viewOnMap": "Auf Karte anzeigen",
     "settingsHint": "Grenzen Ihrer Waldparzellen verwalten.",
     "demoNote": "Im Demo-Modus werden Beispielparzellen angezeigt. Echte Parzellen anlegen geht nur mit angeschlossenem Supabase.",
     "parseErr": {

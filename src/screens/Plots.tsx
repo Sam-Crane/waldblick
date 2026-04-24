@@ -102,20 +102,26 @@ export default function Plots() {
                 key={p.id}
                 className="flex items-center gap-3 rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
               >
-                <div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2"
-                  style={{ borderColor: p.color ?? '#173124', backgroundColor: (p.color ?? '#173124') + '22' }}
+                <button
+                  onClick={() => navigate('/map', { state: { focusPlotId: p.id } })}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left active:scale-[0.99]"
+                  aria-label={t('plots.viewOnMap')}
                 >
-                  <span className="material-symbols-outlined" style={{ color: p.color ?? '#173124' }}>
-                    crop_square
-                  </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-label-md font-semibold">{p.name}</p>
-                  <p className="truncate text-label-sm text-outline">
-                    {p.boundary.coordinates[0]?.length ?? 0} {t('plots.vertices')}
-                  </p>
-                </div>
+                  <div
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded border-2"
+                    style={{ borderColor: p.color ?? '#173124', backgroundColor: (p.color ?? '#173124') + '22' }}
+                  >
+                    <span className="material-symbols-outlined" style={{ color: p.color ?? '#173124' }}>
+                      crop_square
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-label-md font-semibold">{p.name}</p>
+                    <p className="truncate text-label-sm text-outline">
+                      {p.boundary.coordinates[0]?.length ?? 0} {t('plots.vertices')} · {t('plots.viewOnMap')}
+                    </p>
+                  </div>
+                </button>
                 {!isDemoMode && (
                   <button
                     onClick={() => remove(p)}

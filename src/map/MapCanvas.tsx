@@ -7,6 +7,8 @@ import { tilesTemplate } from './wms';
 
 export type MapCanvasHandle = {
   getBounds: () => maplibregl.LngLatBounds | null;
+  fitBounds: (bounds: [[number, number], [number, number]], padding?: number) => void;
+  flyTo: (latlng: { lat: number; lng: number }, zoom?: number) => void;
 };
 
 type Props = {
@@ -73,6 +75,12 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
 ) {
   useImperativeHandle(handleRef, () => ({
     getBounds: () => mapRef.current?.getBounds() ?? null,
+    fitBounds: (bounds, padding = 60) => {
+      mapRef.current?.fitBounds(bounds, { padding, duration: 600, maxZoom: 15 });
+    },
+    flyTo: (latlng, zoom = 14) => {
+      mapRef.current?.flyTo({ center: [latlng.lng, latlng.lat], zoom, duration: 800 });
+    },
   }));
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);

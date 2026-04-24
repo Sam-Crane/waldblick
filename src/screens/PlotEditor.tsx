@@ -37,7 +37,9 @@ export default function PlotEditor() {
       return;
     }
     toast.success(t('plots.created', { name: result.plot.name }));
-    navigate('/plots', { replace: true });
+    // Jump straight to the map with a hint to fit on the new plot so the
+    // user actually sees what they drew, instead of having to pan around.
+    navigate('/map', { replace: true, state: { focusPlotId: result.plot.id } });
   };
 
   return (

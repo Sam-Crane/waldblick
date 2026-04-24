@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
 import InventoryStats from '@/components/InventoryStats';
@@ -10,6 +10,7 @@ import RouteCard from '@/map/RouteCard';
 import MapFilterBar from '@/map/MapFilterBar';
 import GeoDebugPill from '@/map/GeoDebugPill';
 import DownloadAreaButton from '@/map/DownloadAreaButton';
+import { combinedBounds } from '@/map/bbox';
 import { useMachines } from '@/data/useMachines';
 import { useCurrentUser } from '@/data/currentUser';
 import { db } from '@/data/db';
@@ -57,6 +58,7 @@ type RouteState =
 export default function MapScreen() {
   const t = useTranslation();
   const me = useCurrentUser();
+  const location = useLocation() as { state?: { focusPlotId?: string } };
   const observations = useLiveQuery(() => db.observations.toArray(), []) ?? [];
 
   const [layerState, setLayerState] = useState<StoredLayerState>(loadLayers);
@@ -77,6 +79,36 @@ export default function MapScreen() {
       cancelled = true;
     };
   }, []);
+
+  // Fit the map to whatever the user actually has data on — priority order:
+  //   1. focusPlotId from navigation state (e.g. after saving a plot)
+  //   2. combined bbox of plots + observations
+  // Done once per mount; we don't refit on every observation change so
+  // users can pan freely without snapping back.
+  const fittedRef = useRef(false);
+  useEffect(() => {
+    const handle = mapRef.current;
+    if (!handle || fittedRef.current) return;
+    if (plots.length === 0 && observations.length === 0) return;
+
+    if (location.state?.focusPlotId) {
+      const p = plots.find((x) => x.id === location.state!.focusPlotId);
+      if (p) {
+        const singleBounds = combinedBounds([p], []);
+        if (singleBounds) {
+          handle.fitBounds(singleBounds);
+          fittedRef.current = true;
+          return;
+        }
+      }
+    }
+
+    const b = combinedBounds(plots, observations);
+    if (b) {
+      handle.fitBounds(b);
+      fittedRef.current = true;
+    }
+  }, [plots, observations, location.state]);
 
   // Broadcast interval: derive machine kind from user role.
   const machineKind = me.role === 'operator' ? 'harvester' : 'other';

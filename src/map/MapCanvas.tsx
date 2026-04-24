@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import maplibregl, { type Map, type Marker } from 'maplibre-gl';
 import type { Machine, MachineKind, Observation, Plot, Priority } from '@/data/types';
-import { isStale } from '@/data/machinesRepo';
+import { isStale, type Trails } from '@/data/machinesRepo';
 import { LAYERS, layerById } from './layers';
 import { tilesTemplate } from './wms';
 
@@ -15,6 +15,7 @@ type Props = {
   observations: Observation[];
   plots?: Plot[];
   machines?: Machine[];
+  machineTrails?: Trails;
   baseLayerId: string;
   activeOverlayIds: string[];
   showPlots?: boolean;
@@ -63,6 +64,7 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     observations,
     plots = [],
     machines = [],
+    machineTrails = {},
     baseLayerId,
     activeOverlayIds,
     showPlots = true,
@@ -417,6 +419,61 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     });
     machineMarkersRef.current = fresh;
   }, [machines, ready, showMachines]);
+
+  // Machine trails — one LineString per machine, gradient-faded from
+  // transparent at the oldest point to solid at the current position.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const srcId = 'machine-trails-src';
+    const layerId = 'machine-trails-layer';
+
+    const features = Object.entries(machineTrails)
+      .filter(([, pts]) => pts.length >= 2 && showMachines)
+      .map(([machineId, pts]) => ({
+        type: 'Feature' as const,
+        properties: { machineId },
+        geometry: {
+          type: 'LineString' as const,
+          coordinates: pts.map((p) => [p.lng, p.lat] as [number, number]),
+        },
+      }));
+
+    const collection = { type: 'FeatureCollection' as const, features };
+
+    if (features.length > 0) {
+      if (!map.getSource(srcId)) {
+        map.addSource(srcId, { type: 'geojson', data: collection, lineMetrics: true });
+        map.addLayer({
+          id: layerId,
+          type: 'line',
+          source: srcId,
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+          paint: {
+            'line-width': 4,
+            // Gradient along the line: transparent at the oldest end (0),
+            // Earthy Brown at the current-position end (1).
+            'line-gradient': [
+              'interpolate',
+              ['linear'],
+              ['line-progress'],
+              0,
+              'rgba(118, 88, 64, 0)',
+              0.7,
+              'rgba(118, 88, 64, 0.55)',
+              1,
+              '#765840',
+            ],
+          },
+        });
+      } else {
+        (map.getSource(srcId) as maplibregl.GeoJSONSource).setData(collection);
+      }
+    } else {
+      if (map.getLayer(layerId)) map.removeLayer(layerId);
+      if (map.getSource(srcId)) map.removeSource(srcId);
+    }
+  }, [machineTrails, showMachines, ready]);
 
   return <div ref={ref} className="absolute inset-0" />;
 });

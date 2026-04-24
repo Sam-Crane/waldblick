@@ -114,7 +114,7 @@ export default function MapScreen() {
 
   // Broadcast interval: derive machine kind from user role.
   const machineKind = me.role === 'operator' ? 'harvester' : 'other';
-  const machines = useMachines(
+  const { machines, trails } = useMachines(
     broadcasting ? { kind: machineKind, label: me.name } : null,
   );
 
@@ -189,6 +189,7 @@ export default function MapScreen() {
             observations={visibleObservations}
             plots={plots}
             machines={machines}
+            machineTrails={trails}
             baseLayerId={layerState.baseLayerId}
             activeOverlayIds={layerState.activeOverlayIds}
             showPlots={layerState.showPlots}

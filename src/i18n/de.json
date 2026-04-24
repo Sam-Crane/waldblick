@@ -59,6 +59,47 @@
       "busy": "Wird gespeichert…"
     }
   },
+  "mapPanel": {
+    "title": "Karten-Ebenen",
+    "baseLayer": "Basiskarte",
+    "appData": "Eigene Daten",
+    "overlays": "Fachebenen",
+    "observations": "Beobachtungen",
+    "plots": "Parzellen",
+    "downloadOnly": "Nur auf Anfrage offline",
+    "attributionNote": "Ebenen werden beim Aktivieren von den jeweiligen Diensten geladen. Offline-Verfügbarkeit abhängig vom lokalen Cache."
+  },
+  "directions": {
+    "hint": "Lange auf die Karte drücken für Navigation",
+    "loading": "Route wird berechnet…",
+    "eta": "Fahrzeit: {eta}",
+    "error": {
+      "not_configured": "Navigation nicht konfiguriert (VITE_GOOGLE_DIRECTIONS_KEY).",
+      "not_found": "Keine Route gefunden.",
+      "zero_results": "Keine Route gefunden.",
+      "over_query_limit": "Tageslimit erreicht.",
+      "request_denied": "Anfrage abgelehnt.",
+      "no_location": "Aktueller Standort nicht verfügbar.",
+      "unknown": "Navigation fehlgeschlagen."
+    }
+  },
+  "weather": {
+    "title": "Wetter & Standort",
+    "loading": "Wetterdaten werden geladen…",
+    "error": "Wetterdaten nicht verfügbar.",
+    "poweredBy": "DWD · Bright Sky",
+    "copernicus": "Sentinel-2 Satellitenbild",
+    "copernicusHint": "Im Copernicus Browser öffnen",
+    "condition": {
+      "dry": "Trocken",
+      "fog": "Nebel",
+      "rain": "Regen",
+      "sleet": "Graupel",
+      "snow": "Schnee",
+      "hail": "Hagel",
+      "thunderstorm": "Gewitter"
+    }
+  },
   "map": {
     "title": "Waldkarte",
     "coordinates": "Koordinaten",

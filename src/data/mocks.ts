@@ -2,7 +2,7 @@
 // repositories in a later phase. Single source for the stubs so we can swap
 // them out in one place.
 
-import type { AppNotification, ChatMessage, Contact, Conversation } from './types';
+import type { AppNotification, ChatMessage, Contact, Conversation, Plot } from './types';
 
 export const CONTACTS: Contact[] = [
   {
@@ -129,3 +129,42 @@ export const NOTIFICATIONS: AppNotification[] = [
 export function contactById(id: string): Contact | undefined {
   return CONTACTS.find((c) => c.id === id);
 }
+
+// Seed plots — two small Bavarian parcels near the default map center.
+// In production these would come from admin-drawn polygons in Supabase.
+export const PLOTS: Plot[] = [
+  {
+    id: 'plot-eichberg-a',
+    name: 'Plot A — Eichberg',
+    color: '#173124',
+    boundary: {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [11.56, 48.145],
+          [11.585, 48.145],
+          [11.585, 48.13],
+          [11.56, 48.13],
+          [11.56, 48.145],
+        ],
+      ],
+    },
+  },
+  {
+    id: 'plot-eichberg-b',
+    name: 'Plot B — Osthang',
+    color: '#765840',
+    boundary: {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [11.6, 48.15],
+          [11.625, 48.148],
+          [11.63, 48.132],
+          [11.605, 48.128],
+          [11.6, 48.15],
+        ],
+      ],
+    },
+  },
+];

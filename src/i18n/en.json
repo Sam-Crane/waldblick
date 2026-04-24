@@ -59,6 +59,47 @@
       "busy": "Saving…"
     }
   },
+  "mapPanel": {
+    "title": "Map Layers",
+    "baseLayer": "Base Layer",
+    "appData": "Your Data",
+    "overlays": "Overlays",
+    "observations": "Observations",
+    "plots": "Plots",
+    "downloadOnly": "Offline on request only",
+    "attributionNote": "Layers load from their respective services when enabled. Offline availability depends on local cache."
+  },
+  "directions": {
+    "hint": "Long-press the map to get directions",
+    "loading": "Calculating route…",
+    "eta": "ETA: {eta}",
+    "error": {
+      "not_configured": "Directions not configured (VITE_GOOGLE_DIRECTIONS_KEY).",
+      "not_found": "No route found.",
+      "zero_results": "No route found.",
+      "over_query_limit": "Daily quota reached.",
+      "request_denied": "Request denied.",
+      "no_location": "Current location unavailable.",
+      "unknown": "Directions failed."
+    }
+  },
+  "weather": {
+    "title": "Weather & Site",
+    "loading": "Loading weather…",
+    "error": "Weather data unavailable.",
+    "poweredBy": "DWD · Bright Sky",
+    "copernicus": "Sentinel-2 satellite imagery",
+    "copernicusHint": "Open in Copernicus Browser",
+    "condition": {
+      "dry": "Dry",
+      "fog": "Fog",
+      "rain": "Rain",
+      "sleet": "Sleet",
+      "snow": "Snow",
+      "hail": "Hail",
+      "thunderstorm": "Thunderstorm"
+    }
+  },
   "map": {
     "title": "Forest Map",
     "coordinates": "Coordinates",

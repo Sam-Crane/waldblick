@@ -119,7 +119,7 @@ The one flow that must work beautifully: *open app → tap Record → take photo
 
 Done when: on a real phone, user can capture 5 observations offline, filter them in the task list, open each for detail. No map yet.
 
-### Phase 2 — Map view + layered sources (2.5 days)
+### Phase 2 — Map view + layered sources (2.5 days) ✅ COMPLETE
 
 - `MapScreen.tsx` — MapLibre full-screen with ESRI World Imagery basemap.
 - **Observation markers** from Dexie as a GeoJSON source; teardrops colored by priority (see `DESIGN.md`). Tap marker → bottom sheet with title, photo thumb, "View details".

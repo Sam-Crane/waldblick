@@ -4,6 +4,18 @@ export type Category = 'beetle' | 'thinning' | 'reforestation' | 'windthrow' | '
 
 export type Status = 'open' | 'in_progress' | 'resolved';
 
+export type Plot = {
+  id: string;
+  forestId?: string;
+  name: string;
+  // GeoJSON Polygon in WGS84: outer ring first, rings as [lng, lat] pairs.
+  boundary: {
+    type: 'Polygon';
+    coordinates: [number, number][][];
+  };
+  color?: string;
+};
+
 export type Observation = {
   id: string;
   forestId?: string;

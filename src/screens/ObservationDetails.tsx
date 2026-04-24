@@ -2,6 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
 import PriorityBadge from '@/components/PriorityBadge';
+import WeatherPanel from '@/components/WeatherPanel';
 import { db } from '@/data/db';
 import { useTranslation } from '@/i18n';
 
@@ -98,6 +99,10 @@ export default function ObservationDetails() {
               </span>
             </div>
           </div>
+        </div>
+
+        <div className="mt-stack-lg">
+          <WeatherPanel lat={observation.lat} lng={observation.lng} />
         </div>
       </div>
 

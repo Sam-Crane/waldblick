@@ -1,11 +1,27 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type ServerOptions } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import basicSsl from '@vitejs/plugin-basic-ssl';
+import fs from 'node:fs';
 import path from 'node:path';
+
+const httpsEnabled = process.env.VITE_HTTPS === '1';
+
+// If the user has run mkcert into ./certs/, use those (trusted by Safari).
+// Otherwise fall back to @vitejs/plugin-basic-ssl (Chrome-only).
+const keyPath = path.resolve(__dirname, 'certs/key.pem');
+const certPath = path.resolve(__dirname, 'certs/cert.pem');
+const hasMkcert = fs.existsSync(keyPath) && fs.existsSync(certPath);
+
+const httpsConfig: ServerOptions['https'] | undefined = httpsEnabled && hasMkcert
+  ? { key: fs.readFileSync(keyPath), cert: fs.readFileSync(certPath) }
+  : undefined;
 
 export default defineConfig({
   plugins: [
     react(),
+    // Only use basic-ssl when HTTPS is on and no mkcert certs were found.
+    ...(httpsEnabled && !hasMkcert ? [basicSsl()] : []),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
@@ -58,5 +74,11 @@ export default defineConfig({
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },
   },
-  server: { host: true, port: 5173 },
+  server: {
+    host: true,
+    port: 5173,
+    https: httpsConfig,
+    // Permit ngrok / cloudflared tunnel hostnames when forwarding to this dev server.
+    allowedHosts: ['.ngrok.dev', '.ngrok-free.app', '.trycloudflare.com', '.ngrok.io'],
+  },
 });

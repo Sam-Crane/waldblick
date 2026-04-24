@@ -1,55 +1,214 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
+import InventoryStats from '@/components/InventoryStats';
+import MapCanvas from '@/map/MapCanvas';
+import LayerPanel from '@/map/LayerPanel';
+import ObservationSheet from '@/map/ObservationSheet';
+import RouteCard from '@/map/RouteCard';
+import MapFilterBar from '@/map/MapFilterBar';
+import GeoDebugPill from '@/map/GeoDebugPill';
 import { db } from '@/data/db';
+import { PLOTS } from '@/data/mocks';
+import type { Priority } from '@/data/types';
 import { useTranslation } from '@/i18n';
+import { directionsEnabled, fetchRoute, type Route } from '@/map/directions';
 
-// Phase 2 will mount MapLibre here with the layer stack from src/map/layers.ts,
-// and surface the Inventory Scan stats as a bottom sheet on mobile / right pane on tablet+.
+const LAYERS_STORAGE_KEY = 'waldblick:map:layers:v2';
+
+type StoredLayerState = {
+  baseLayerId: string;
+  activeOverlayIds: string[];
+  showPlots: boolean;
+  showObservations: boolean;
+};
+
+const DEFAULT_STATE: StoredLayerState = {
+  baseLayerId: 'base-satellite',
+  activeOverlayIds: ['overlay-alkis-parzellar'],
+  showPlots: true,
+  showObservations: true,
+};
+
+function loadLayers(): StoredLayerState {
+  if (typeof localStorage === 'undefined') return DEFAULT_STATE;
+  try {
+    const raw = localStorage.getItem(LAYERS_STORAGE_KEY);
+    if (!raw) return DEFAULT_STATE;
+    const parsed = JSON.parse(raw) as Partial<StoredLayerState>;
+    return { ...DEFAULT_STATE, ...parsed };
+  } catch {
+    return DEFAULT_STATE;
+  }
+}
+
+type RouteState =
+  | { kind: 'idle' }
+  | { kind: 'loading'; dest: { lat: number; lng: number } }
+  | { kind: 'ready'; route: Route }
+  | { kind: 'error'; message: string };
+
 export default function MapScreen() {
   const t = useTranslation();
   const observations = useLiveQuery(() => db.observations.toArray(), []) ?? [];
-  const critical = observations.filter((o) => o.priority === 'critical' && o.status !== 'resolved').length;
+
+  const [layerState, setLayerState] = useState<StoredLayerState>(loadLayers);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [route, setRoute] = useState<RouteState>({ kind: 'idle' });
+  const [priorityFilter, setPriorityFilter] = useState<Set<Priority>>(new Set());
+
+  useEffect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(LAYERS_STORAGE_KEY, JSON.stringify(layerState));
+    }
+  }, [layerState]);
+
+  const toggleOverlay = (id: string) =>
+    setLayerState((s) => ({
+      ...s,
+      activeOverlayIds: s.activeOverlayIds.includes(id)
+        ? s.activeOverlayIds.filter((x) => x !== id)
+        : [...s.activeOverlayIds, id],
+    }));
+
+  const togglePriority = (p: Priority) => {
+    const next = new Set(priorityFilter);
+    next.has(p) ? next.delete(p) : next.add(p);
+    setPriorityFilter(next);
+  };
+
+  const visibleObservations = useMemo(
+    () =>
+      priorityFilter.size === 0
+        ? observations
+        : observations.filter((o) => priorityFilter.has(o.priority)),
+    [observations, priorityFilter],
+  );
+
+  const onLongPress = (dest: { lat: number; lng: number }) => {
+    if (!directionsEnabled) {
+      setRoute({ kind: 'error', message: 'not_configured' });
+      return;
+    }
+    setRoute({ kind: 'loading', dest });
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const r = await fetchRoute({ lat: pos.coords.latitude, lng: pos.coords.longitude }, dest);
+          setRoute({ kind: 'ready', route: r });
+        } catch (e) {
+          const code = (e as Error).message?.replace(/^directions_/, '') ?? 'unknown';
+          setRoute({ kind: 'error', message: code });
+        }
+      },
+      () => setRoute({ kind: 'error', message: 'no_location' }),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
 
   return (
-    <div className="flex h-full flex-col">
-      <TopBar title="Waldblick" />
-      <div className="relative flex-1 bg-surface-container">
-        <div className="absolute inset-0 flex items-center justify-center text-on-surface-variant">
-          <div className="max-w-xs rounded-lg border border-outline-variant bg-surface-container-lowest p-4 text-center">
-            <span className="material-symbols-outlined mb-2 text-4xl text-primary">map</span>
-            <p className="text-body-md">{t('map.placeholder')}</p>
+    <div className="relative flex h-full flex-col">
+      <TopBar
+        title="Waldblick"
+        trailing={
+          <button
+            onClick={() => setPanelOpen(true)}
+            className="touch-safe flex items-center justify-center rounded-lg text-primary-container hover:bg-surface-container"
+            aria-label={t('mapPanel.title')}
+          >
+            <span className="material-symbols-outlined">layers</span>
+          </button>
+        }
+      />
+      {/* Split-view on tablet+: map left, inventory panel right */}
+      <div className="flex flex-1 overflow-hidden">
+        <div className="relative flex-1">
+          <MapCanvas
+            observations={visibleObservations}
+            plots={PLOTS}
+            baseLayerId={layerState.baseLayerId}
+            activeOverlayIds={layerState.activeOverlayIds}
+            showPlots={layerState.showPlots}
+            showObservations={layerState.showObservations}
+            onMarkerTap={setSelectedId}
+            onLongPress={onLongPress}
+            routeCoords={route.kind === 'ready' ? route.route.coordinates : undefined}
+          />
+
+          {/* Mobile-only: Inventory Scan pill linking to Dashboard */}
+          <Link
+            to="/dashboard"
+            className="absolute left-4 top-4 z-10 flex items-center gap-3 rounded-lg bg-primary px-3 py-2 text-on-primary shadow-lg active:scale-95 md:hidden"
+          >
+            <span className="material-symbols-outlined">space_dashboard</span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-primary-fixed-dim">
+                {t('map.inventoryScan')}
+              </span>
+              <span className="text-label-md font-bold">
+                {t('map.inventoryCounts', {
+                  total: observations.length,
+                  critical: observations.filter((o) => o.priority === 'critical' && o.status !== 'resolved').length,
+                })}
+              </span>
+            </div>
+            <span className="material-symbols-outlined text-primary-fixed-dim">chevron_right</span>
+          </Link>
+
+          {/* Priority filter bar — below the pill on mobile, centered top on tablet+ */}
+          <div className="pointer-events-none absolute left-4 top-[72px] z-10 md:left-1/2 md:top-4 md:-translate-x-1/2">
+            <MapFilterBar active={priorityFilter} onToggle={togglePriority} />
           </div>
+
+          <GeoDebugPill />
+
+          {directionsEnabled && route.kind === 'idle' && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-4 z-0 flex justify-center">
+              <p className="pointer-events-auto rounded-full bg-inverse-surface/80 px-3 py-1 text-label-sm text-inverse-on-surface backdrop-blur-md">
+                {t('directions.hint')}
+              </p>
+            </div>
+          )}
         </div>
 
-        <div className="absolute bottom-4 left-4 flex items-center gap-3 rounded-lg bg-inverse-surface/80 px-3 py-1.5 text-inverse-on-surface backdrop-blur-md">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">
-              {t('map.coordinates')}
-            </span>
-            <span className="text-label-sm">48.137° N, 11.575° E</span>
-          </div>
-          <div className="h-8 w-px bg-white/20" />
-          <span className="material-symbols-outlined">explore</span>
-        </div>
-
-        {/* Inventory Scan preview — Phase 2 will expand this into a bottom sheet / side panel. */}
-        <Link
-          to="/dashboard"
-          className="absolute right-4 top-4 flex items-center gap-3 rounded-lg bg-primary px-3 py-2 text-on-primary shadow-lg active:scale-95"
-        >
-          <span className="material-symbols-outlined">space_dashboard</span>
-          <div className="flex flex-col leading-tight">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-primary-fixed-dim">
-              {t('map.inventoryScan')}
-            </span>
-            <span className="text-label-md font-bold">
-              {t('map.inventoryCounts', { total: observations.length, critical })}
-            </span>
-          </div>
-          <span className="material-symbols-outlined text-primary-fixed-dim">chevron_right</span>
-        </Link>
+        {/* Tablet+: inventory side panel */}
+        <aside className="hidden w-80 shrink-0 overflow-y-auto bg-primary px-margin-main py-stack-lg text-on-primary md:block">
+          <h2 className="mb-stack-md text-headline-md font-semibold">{t('map.inventoryScan')}</h2>
+          <InventoryStats observations={observations} variant="dark" />
+          <Link
+            to="/record"
+            className="touch-safe mt-stack-lg flex w-full items-center justify-center gap-3 rounded-lg bg-tertiary-fixed-dim font-black uppercase tracking-widest text-on-tertiary-fixed shadow-xl active:scale-95"
+          >
+            <span className="material-symbols-outlined">add_a_photo</span>
+            {t('dashboard.newObservation')}
+          </Link>
+        </aside>
       </div>
+
+      <LayerPanel
+        open={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        baseLayerId={layerState.baseLayerId}
+        onBaseChange={(id) => setLayerState((s) => ({ ...s, baseLayerId: id }))}
+        activeOverlayIds={layerState.activeOverlayIds}
+        onOverlayToggle={toggleOverlay}
+        showPlots={layerState.showPlots}
+        onShowPlotsChange={(v) => setLayerState((s) => ({ ...s, showPlots: v }))}
+        showObservations={layerState.showObservations}
+        onShowObservationsChange={(v) => setLayerState((s) => ({ ...s, showObservations: v }))}
+      />
+      <ObservationSheet id={selectedId} onClose={() => setSelectedId(null)} />
+
+      {route.kind !== 'idle' && (
+        <RouteCard
+          state={route.kind === 'loading' ? 'loading' : route.kind === 'ready' ? 'ready' : 'error'}
+          route={route.kind === 'ready' ? route.route : undefined}
+          error={route.kind === 'error' ? route.message : undefined}
+          onClose={() => setRoute({ kind: 'idle' })}
+        />
+      )}
     </div>
   );
 }

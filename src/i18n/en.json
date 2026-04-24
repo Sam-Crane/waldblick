@@ -79,6 +79,21 @@
     "unknown": "Location error.",
     "lowAccuracy": "Low accuracy (±{m} m). Turn on \u201cPrecise Location\u201d in iOS settings."
   },
+  "tag": {
+    "title": "Tag this tree",
+    "hint": "Print the QR on a weatherproof label and attach it to the tree. Any phone camera can scan it. Android devices can also write the observation URL to an NFC tag — after that, any phone (iPhone or Android) scans it natively.",
+    "qrAlt": "QR code for this observation",
+    "downloadQr": "Download QR as PNG",
+    "copyUrl": "Copy URL",
+    "urlCopied": "URL copied.",
+    "urlCopyFailed": "Copy failed.",
+    "writeNfc": "Write to NFC tag",
+    "nfcWaiting": "Tap a tag now…",
+    "nfcSuccess": "Tag written",
+    "nfcWritten": "NFC tag written successfully.",
+    "nfcFailed": "NFC error: {error}",
+    "nfcUnsupported": "NFC writing isn't available on this device. An Android Chrome device on your team can write a tag — every user (iPhone too) can then scan it."
+  },
   "navigate": {
     "title": "Navigate here",
     "acquiring": "Getting your location…",

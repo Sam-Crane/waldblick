@@ -7,6 +7,7 @@ import WeatherPanel from '@/components/WeatherPanel';
 import SpeciesRecommendations from '@/components/SpeciesRecommendations';
 import AssignSheet from '@/components/AssignSheet';
 import ShareToChatSheet from '@/components/ShareToChatSheet';
+import TagActions from '@/components/TagActions';
 import { db } from '@/data/db';
 import { CONTACTS } from '@/data/mocks';
 import { initials } from '@/data/currentUser';
@@ -158,6 +159,10 @@ export default function ObservationDetails() {
             <SpeciesRecommendations lat={observation.lat} lng={observation.lng} />
           </div>
         )}
+
+        <div className="mt-stack-lg">
+          <TagActions observationId={observation.id} />
+        </div>
       </div>
 
       {/* Action */}

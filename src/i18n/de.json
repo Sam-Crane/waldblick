@@ -79,6 +79,21 @@
     "unknown": "Standort-Fehler.",
     "lowAccuracy": "Ungenaue Position (±{m} m). \u201ePrecise Location\u201c in iOS-Einstellungen aktivieren."
   },
+  "tag": {
+    "title": "Baum markieren",
+    "hint": "Drucken Sie den QR-Code auf eine wetterfeste Etikette und befestigen Sie ihn am Baum. Jedes Smartphone kann ihn mit der Kamera scannen. Android-Geräte können zusätzlich einen NFC-Chip beschreiben — den kann danach jeder scannen.",
+    "qrAlt": "QR-Code für diese Beobachtung",
+    "downloadQr": "QR als PNG speichern",
+    "copyUrl": "URL kopieren",
+    "urlCopied": "URL kopiert.",
+    "urlCopyFailed": "Kopieren nicht möglich.",
+    "writeNfc": "NFC-Chip beschreiben",
+    "nfcWaiting": "Chip jetzt antippen…",
+    "nfcSuccess": "Chip beschrieben",
+    "nfcWritten": "NFC-Chip erfolgreich beschrieben.",
+    "nfcFailed": "NFC-Fehler: {error}",
+    "nfcUnsupported": "NFC-Schreiben ist auf diesem Gerät nicht verfügbar. Mit einem Android-Chrome-Gerät aus Ihrem Team können Sie einen Chip beschreiben — alle Nutzer können ihn danach scannen."
+  },
   "navigate": {
     "title": "Hin navigieren",
     "acquiring": "Standort wird ermittelt…",

@@ -293,7 +293,15 @@
     "open": "Open notifications",
     "title": "Notifications",
     "empty": "No new notifications.",
-    "markAll": "Mark all read"
+    "markAll": "Mark all read",
+    "kind": {
+      "critical_observation": "Critical observations",
+      "task_assigned": "Task assigned",
+      "message": "New messages",
+      "connection_request": "Connection requests",
+      "sync_issue": "Sync issues",
+      "user_joined": "New users"
+    }
   },
   "profile": {
     "menu": "Profile menu",
@@ -356,6 +364,9 @@
     "forest": "Forest",
     "language": "Language",
     "lang": { "de": "Deutsch", "en": "English" },
+    "notifications": "Notifications",
+    "notificationsHint": "Which kinds of notifications you want to receive.",
+    "prefsFailed": "Could not save preference.",
     "offline": "Offline Data",
     "syncStatus": "Sync",
     "syncComingSoon": "Coming in Phase 3",

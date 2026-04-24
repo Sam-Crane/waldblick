@@ -293,7 +293,15 @@
     "open": "Benachrichtigungen öffnen",
     "title": "Benachrichtigungen",
     "empty": "Keine neuen Benachrichtigungen.",
-    "markAll": "Alle gelesen"
+    "markAll": "Alle gelesen",
+    "kind": {
+      "critical_observation": "Kritische Beobachtungen",
+      "task_assigned": "Aufgabe zugewiesen",
+      "message": "Neue Nachrichten",
+      "connection_request": "Verbindungsanfragen",
+      "sync_issue": "Sync-Probleme",
+      "user_joined": "Neue Nutzer"
+    }
   },
   "profile": {
     "menu": "Profilmenü",
@@ -356,6 +364,9 @@
     "forest": "Revier",
     "language": "Sprache",
     "lang": { "de": "Deutsch", "en": "English" },
+    "notifications": "Benachrichtigungen",
+    "notificationsHint": "Welche Arten von Benachrichtigungen Sie erhalten möchten.",
+    "prefsFailed": "Einstellung konnte nicht gespeichert werden.",
     "offline": "Offline-Daten",
     "syncStatus": "Synchronisation",
     "syncComingSoon": "Kommt in Phase 3",

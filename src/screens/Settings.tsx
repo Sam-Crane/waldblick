@@ -1,20 +1,44 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import TopBar from '@/components/Layout/TopBar';
 import { setLang, useTranslation } from '@/i18n';
 import { db } from '@/data/db';
 import { fullResync } from '@/data/realtimeSync';
+import { notificationsRepo, type NotificationPrefs, ALL_KINDS } from '@/data/notificationsRepo';
+import { useSession } from '@/data/session';
 import { useToast } from '@/components/Toast';
+import type { NotificationKind } from '@/data/types';
 
 export default function Settings() {
   const t = useTranslation();
   const navigate = useNavigate();
   const toast = useToast();
+  const { isDemoMode } = useSession();
   const [lang, setLocalLang] = useState<'de' | 'en'>(
     typeof navigator !== 'undefined' && navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en',
   );
   const [busy, setBusy] = useState(false);
   const [resyncing, setResyncing] = useState(false);
+  const [prefs, setPrefs] = useState<NotificationPrefs>({});
+
+  useEffect(() => {
+    if (isDemoMode) return;
+    void notificationsRepo.getPrefs().then(setPrefs);
+  }, [isDemoMode]);
+
+  const togglePref = async (kind: NotificationKind) => {
+    // A missing key is treated as enabled, so a toggle to "off" writes false
+    // explicitly; back on writes true (or delete the key — we keep the shape
+    // explicit so the server's coalesce default can still do its job).
+    const currentlyOn = prefs[kind] ?? true;
+    const next: NotificationPrefs = { ...prefs, [kind]: !currentlyOn };
+    setPrefs(next);
+    const ok = await notificationsRepo.updatePrefs(next);
+    if (!ok) {
+      setPrefs(prefs); // revert
+      toast.error(t('settings.prefsFailed'));
+    }
+  };
 
   const changeLang = (next: 'de' | 'en') => {
     setLocalLang(next);
@@ -95,6 +119,54 @@ export default function Settings() {
             <span className="material-symbols-outlined text-outline">chevron_right</span>
           </Link>
         </Section>
+
+        {!isDemoMode && (
+          <Section title={t('settings.notifications')}>
+            <ul className="flex flex-col gap-2">
+              {ALL_KINDS.map((kind) => {
+                const on = prefs[kind] ?? true;
+                return (
+                  <li
+                    key={kind}
+                    className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest p-3"
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-primary-container">
+                        {kind === 'critical_observation'
+                          ? 'report_problem'
+                          : kind === 'task_assigned'
+                            ? 'assignment_ind'
+                            : kind === 'message'
+                              ? 'chat'
+                              : kind === 'connection_request'
+                                ? 'person_add'
+                                : kind === 'user_joined'
+                                  ? 'group_add'
+                                  : 'cloud_off'}
+                      </span>
+                      <span className="text-body-md">{t(`notifications.kind.${kind}`)}</span>
+                    </span>
+                    <button
+                      onClick={() => togglePref(kind)}
+                      role="switch"
+                      aria-checked={on}
+                      className={`relative h-7 w-12 rounded-full transition-colors ${
+                        on ? 'bg-primary' : 'bg-outline-variant'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-0.5 h-6 w-6 rounded-full bg-surface-container-lowest shadow transition-transform ${
+                          on ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <p className="mt-1 text-label-sm text-outline">{t('settings.notificationsHint')}</p>
+          </Section>
+        )}
 
         <Section title={t('settings.offline')}>
           <button

@@ -14,6 +14,7 @@ These are the minimum steps between the current repo state and running the [fiel
    - `supabase/migrations/0007_tighten_rls.sql` *(closes two cross-user leaks: observations/photos/machines with `forest_id IS NULL` are now author-only, and the tasks table's blanket FOR ALL policy is split into assignee/author-only INSERT/UPDATE/DELETE/SELECT)*
    - `supabase/migrations/0008_invite_grants_membership.sql` *(invite-code acceptance grants real forest membership; forest owners auto-enrolled on creation; acceptance notification to the requester)*
    - `supabase/migrations/0009_personal_forest_on_signup.sql` *(every signup now auto-creates a personal forest; backfills all existing users who didn't have one, fixing the "No forest yet" error when creating a plot)*
+   - `supabase/migrations/0010_notification_preferences.sql` *(adds `notification_prefs` jsonb on profiles; every fanout trigger now checks `wants_notification(user_id, kind)` before inserting)*
 2. **(optional)** `supabase/seeds/demo_forest.sql` or `_multi.sql` — only needed if you want the shared "Revier Eichberg" demo. With 0009 in place every user already has their own personal forest.
 3. **Turn on leaked-password protection** in Supabase Auth → Password Security → enable HaveIBeenPwned. One-click, blocks sign-ups with compromised passwords.
 4. **PWA icons already generated** — `public/icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, plus `apple-touch-icon.png` and `favicon-32.png`. Regenerate any time by editing `public/icon.svg` / `public/icon-maskable.svg` and running `npm run icons`.
@@ -56,8 +57,8 @@ Currently we link out to the Copernicus Browser. For in-app preview:
 ### Machine trail history *(scoped out of Phase 4)*
 Machines currently show only last-known position. Add a `machine_positions` table that stores every ping (with a short retention) and draw a fading trail behind each machine on the map.
 
-### Per-user notification preferences
-Users can turn off `user_joined` / `message` / etc. kinds from Settings. Stored as a `notification_prefs` jsonb on profiles. Applied server-side in the trigger functions before insert.
+### ✅ Per-user notification preferences — shipped
+`notification_prefs` jsonb on `profiles` (migration 0010). Every fanout trigger now checks `public.wants_notification(user_id, kind)` before inserting. Settings screen exposes a toggle per kind, live-synced to the column. Default is permissive (missing key = enabled).
 
 ## Long-horizon — v2: native wrap
 

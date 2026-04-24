@@ -13,8 +13,8 @@ import DownloadAreaButton from '@/map/DownloadAreaButton';
 import { useMachines } from '@/data/useMachines';
 import { useCurrentUser } from '@/data/currentUser';
 import { db } from '@/data/db';
-import { PLOTS } from '@/data/mocks';
-import type { Priority } from '@/data/types';
+import { plotsRepo } from '@/data/plotsRepo';
+import type { Plot, Priority } from '@/data/types';
 import { useTranslation } from '@/i18n';
 import { directionsEnabled, fetchRoute, type Route } from '@/map/directions';
 
@@ -65,7 +65,18 @@ export default function MapScreen() {
   const [route, setRoute] = useState<RouteState>({ kind: 'idle' });
   const [priorityFilter, setPriorityFilter] = useState<Set<Priority>>(new Set());
   const [broadcasting, setBroadcasting] = useState(false);
+  const [plots, setPlots] = useState<Plot[]>([]);
   const mapRef = useRef<MapCanvasHandle>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void plotsRepo.list().then((list) => {
+      if (!cancelled) setPlots(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Broadcast interval: derive machine kind from user role.
   const machineKind = me.role === 'operator' ? 'harvester' : 'other';
@@ -142,7 +153,7 @@ export default function MapScreen() {
           <MapCanvas
             ref={mapRef}
             observations={visibleObservations}
-            plots={PLOTS}
+            plots={plots}
             machines={machines}
             baseLayerId={layerState.baseLayerId}
             activeOverlayIds={layerState.activeOverlayIds}

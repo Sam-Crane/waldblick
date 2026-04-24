@@ -305,8 +305,47 @@
     "contractor": "Unternehmer",
     "operator": "Maschinenführer"
   },
+  "plots": {
+    "title": "Parzellen",
+    "new": "Neue Parzelle",
+    "name": "Name",
+    "namePlaceholder": "z. B. Plot B-14",
+    "color": "Farbe",
+    "boundary": "Grenze (GeoJSON)",
+    "boundaryHint": "Polygon als GeoJSON-Feature oder rohe Geometrie. Koordinaten in WGS84 (lng, lat).",
+    "drawAtGeojsonIo": "Auf geojson.io zeichnen",
+    "save": "Parzelle speichern",
+    "saving": "Wird gespeichert…",
+    "created": "{name} erstellt.",
+    "delete": "Löschen",
+    "deleteConfirm": "{name} wirklich löschen?",
+    "deleted": "{name} gelöscht.",
+    "deleteFailed": "Löschen fehlgeschlagen.",
+    "empty": "Noch keine Parzellen angelegt.",
+    "loading": "Wird geladen…",
+    "vertices": "Eckpunkte",
+    "settingsHint": "Grenzen Ihrer Waldparzellen verwalten.",
+    "demoNote": "Im Demo-Modus werden Beispielparzellen angezeigt. Echte Parzellen anlegen geht nur mit angeschlossenem Supabase.",
+    "parseErr": {
+      "empty": "GeoJSON darf nicht leer sein.",
+      "not_json": "Ungültiges JSON-Format.",
+      "no_polygon": "Kein Polygon gefunden.",
+      "not_polygon": "Nur Polygon wird unterstützt (nicht Point/LineString).",
+      "no_rings": "Polygon hat keine Ringe.",
+      "too_few_vertices": "Polygon braucht mindestens 3 Punkte (+ Schluss).",
+      "bad_vertex": "Ungültiger Eckpunkt.",
+      "non_numeric": "Koordinaten müssen Zahlen sein.",
+      "out_of_range": "Koordinaten außerhalb des WGS84-Bereichs."
+    },
+    "createErr": {
+      "supabase_missing": "Supabase ist nicht konfiguriert.",
+      "no_forest": "Kein Revier vorhanden. Erst Revier anlegen oder Einladung annehmen.",
+      "insert_failed": "Speichern fehlgeschlagen."
+    }
+  },
   "settings": {
     "title": "Einstellungen",
+    "forest": "Revier",
     "language": "Sprache",
     "lang": { "de": "Deutsch", "en": "English" },
     "offline": "Offline-Daten",

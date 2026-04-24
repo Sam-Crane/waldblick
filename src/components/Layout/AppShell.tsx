@@ -3,7 +3,7 @@ import BottomNav from './BottomNav';
 import DemoBanner from '@/components/DemoBanner';
 
 // Sub-pages with their own back button / action bar.
-const HIDE_NAV = ['/observations/', '/profile', '/settings', '/record', '/connect', '/messages/'];
+const HIDE_NAV = ['/observations/', '/profile', '/settings', '/record', '/connect', '/messages/', '/plots'];
 
 export default function AppShell() {
   const { pathname } = useLocation();

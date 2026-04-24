@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import TopBar from '@/components/Layout/TopBar';
 import { setLang, useTranslation } from '@/i18n';
@@ -78,6 +78,22 @@ export default function Settings() {
               </button>
             ))}
           </div>
+        </Section>
+
+        <Section title={t('settings.forest')}>
+          <Link
+            to="/plots"
+            className="flex items-center justify-between rounded-lg border border-outline-variant bg-surface-container-lowest p-4 hover:bg-surface-container"
+          >
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-primary-container">crop_square</span>
+              <div>
+                <p className="text-body-md font-semibold text-on-surface">{t('plots.title')}</p>
+                <p className="text-label-sm text-outline">{t('plots.settingsHint')}</p>
+              </div>
+            </div>
+            <span className="material-symbols-outlined text-outline">chevron_right</span>
+          </Link>
         </Section>
 
         <Section title={t('settings.offline')}>

@@ -17,6 +17,8 @@ import Settings from '@/screens/Settings';
 import Messages from '@/screens/Messages';
 import Conversation from '@/screens/Conversation';
 import Connect from '@/screens/Connect';
+import Plots from '@/screens/Plots';
+import PlotEditor from '@/screens/PlotEditor';
 import SignIn from '@/screens/auth/SignIn';
 import SignUp from '@/screens/auth/SignUp';
 import ForgotPassword from '@/screens/auth/ForgotPassword';
@@ -49,6 +51,8 @@ export default function App() {
             <Route path="/messages" element={<Messages />} />
             <Route path="/messages/:id" element={<Conversation />} />
             <Route path="/connect" element={<Connect />} />
+            <Route path="/plots" element={<Plots />} />
+            <Route path="/plots/new" element={<PlotEditor />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
           </Route>

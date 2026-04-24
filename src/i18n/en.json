@@ -305,8 +305,47 @@
     "contractor": "Contractor",
     "operator": "Machine Operator"
   },
+  "plots": {
+    "title": "Plots",
+    "new": "New plot",
+    "name": "Name",
+    "namePlaceholder": "e.g. Plot B-14",
+    "color": "Color",
+    "boundary": "Boundary (GeoJSON)",
+    "boundaryHint": "Polygon as GeoJSON Feature or raw geometry. Coordinates in WGS84 (lng, lat).",
+    "drawAtGeojsonIo": "Draw on geojson.io",
+    "save": "Save plot",
+    "saving": "Saving…",
+    "created": "{name} created.",
+    "delete": "Delete",
+    "deleteConfirm": "Really delete {name}?",
+    "deleted": "{name} deleted.",
+    "deleteFailed": "Delete failed.",
+    "empty": "No plots defined yet.",
+    "loading": "Loading…",
+    "vertices": "vertices",
+    "settingsHint": "Manage your forest plot boundaries.",
+    "demoNote": "Demo mode shows sample plots. Creating real plots requires Supabase.",
+    "parseErr": {
+      "empty": "GeoJSON must not be empty.",
+      "not_json": "Invalid JSON.",
+      "no_polygon": "No Polygon found.",
+      "not_polygon": "Only Polygon is supported (not Point/LineString).",
+      "no_rings": "Polygon has no rings.",
+      "too_few_vertices": "Polygon needs at least 3 points (+ closing).",
+      "bad_vertex": "Invalid vertex.",
+      "non_numeric": "Coordinates must be numbers.",
+      "out_of_range": "Coordinates outside WGS84 range."
+    },
+    "createErr": {
+      "supabase_missing": "Supabase is not configured.",
+      "no_forest": "No forest yet. Create a forest or accept an invite first.",
+      "insert_failed": "Save failed."
+    }
+  },
   "settings": {
     "title": "Settings",
+    "forest": "Forest",
     "language": "Language",
     "lang": { "de": "Deutsch", "en": "English" },
     "offline": "Offline Data",

@@ -39,16 +39,25 @@ export default function AddObservation() {
   const samplesRef = useRef<GpsSample[]>([]);
   const watchIdRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
+  const startedAtRef = useRef<number>(0);
 
   // 30-second GPS averaging. Stream positions via watchPosition, store
   // them, then inverse-variance-weight into a single fix. User can stop
   // early by tapping "Use now".
+  //
+  // Implementation note: we read elapsed time from startedAtRef inside the
+  // interval callback and pass a plain value to setCountdown. The previous
+  // version called finishMeasuring from inside a setCountdown updater
+  // function, which React evaluates during render and which therefore
+  // triggered a "Cannot update ToastProvider while rendering AddObservation"
+  // warning. Keeping the state update pure (no side effects) fixes that.
   const startMeasuring = () => {
     if (!navigator.geolocation) {
       toast.error(t('record.gpsUnavailable'));
       return;
     }
     samplesRef.current = [];
+    startedAtRef.current = Date.now();
     setCountdown(MEASURE_SECONDS);
     setMeasuring(true);
 
@@ -68,14 +77,11 @@ export default function AddObservation() {
     );
 
     tickRef.current = window.setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          finishMeasuring();
-          return 0;
-        }
-        return c - 1;
-      });
-    }, 1_000);
+      const elapsed = Math.floor((Date.now() - startedAtRef.current) / 1000);
+      const remaining = Math.max(0, MEASURE_SECONDS - elapsed);
+      setCountdown(remaining);
+      if (remaining === 0) finishMeasuring();
+    }, 500);
   };
 
   const finishMeasuring = () => {

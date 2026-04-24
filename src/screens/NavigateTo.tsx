@@ -45,7 +45,20 @@ export default function NavigateTo() {
 
   const [state, setState] = useState<State>({ phase: 'waiting' });
   const [compassHeading, setCompassHeading] = useState<number | null>(null);
-  const [compassGranted, setCompassGranted] = useState<boolean | null>(null);
+  // Only iOS 13+ Safari actually gates `deviceorientation` on an explicit
+  // user-gesture permission. Everywhere else (Android, desktop) the events
+  // stream as soon as we attach the listener. Detecting that up-front lets
+  // us avoid showing an "Enable compass" button where it isn't needed.
+  const needsIosPermission =
+    typeof window !== 'undefined' &&
+    typeof (
+      window.DeviceOrientationEvent as unknown as {
+        requestPermission?: () => Promise<'granted' | 'denied'>;
+      }
+    )?.requestPermission === 'function';
+  const [iosPermission, setIosPermission] = useState<'granted' | 'denied' | 'unknown'>(
+    needsIosPermission ? 'unknown' : 'granted',
+  );
 
   // Live GPS. watchPosition gives us accuracy + heading (when moving).
   useEffect(() => {
@@ -95,14 +108,16 @@ export default function NavigateTo() {
     return () => navigator.geolocation.clearWatch(watch);
   }, [observation, t]);
 
-  // Device compass — only for static-orientation fallback. iOS 13+ needs
-  // an explicit gesture-bound permission request; most Android exposes it
-  // immediately. If anything about it fails, we just don't rotate the arrow.
+  // Device compass. Attach the listener eagerly: on Android/desktop the
+  // events just stream, no permission needed. On iOS 13+ Safari the events
+  // are silently filtered until requestPermission() has been called from
+  // a user gesture, but attaching the listener before permission is
+  // harmless. If we get at least one tick within 2s we mark permission
+  // as effectively 'granted' so the UI doesn't show the button.
   useEffect(() => {
-    if (compassGranted !== true) return;
+    let alive = true;
     const onOrient = (e: DeviceOrientationEvent) => {
-      // Webkit gives an ios-specific compass field; standards give alpha
-      // which is counter-clockwise from north and needs inverting.
+      if (!alive) return;
       const webkit = (e as DeviceOrientationEvent & { webkitCompassHeading?: number })
         .webkitCompassHeading;
       if (typeof webkit === 'number') {
@@ -110,26 +125,30 @@ export default function NavigateTo() {
       } else if (typeof e.alpha === 'number') {
         setCompassHeading((360 - e.alpha) % 360);
       }
+      // First event fired → permission was already live for this session
+      // (either granted on this tab, or platform doesn't need it).
+      setIosPermission('granted');
     };
     window.addEventListener('deviceorientation', onOrient, true);
-    return () => window.removeEventListener('deviceorientation', onOrient, true);
-  }, [compassGranted]);
+    return () => {
+      alive = false;
+      window.removeEventListener('deviceorientation', onOrient, true);
+    };
+  }, []);
 
   const requestCompass = async () => {
-    // Safari requires an explicit user-gesture permission request.
-    type IosCtor = {
+    const ctor = window.DeviceOrientationEvent as unknown as {
       requestPermission?: () => Promise<'granted' | 'denied'>;
     };
-    const ctor = (window as unknown as { DeviceOrientationEvent?: IosCtor }).DeviceOrientationEvent;
-    if (ctor?.requestPermission) {
-      try {
-        const r = await ctor.requestPermission();
-        setCompassGranted(r === 'granted');
-      } catch {
-        setCompassGranted(false);
-      }
-    } else {
-      setCompassGranted(true);
+    if (typeof ctor?.requestPermission !== 'function') {
+      setIosPermission('granted');
+      return;
+    }
+    try {
+      const r = await ctor.requestPermission();
+      setIosPermission(r);
+    } catch {
+      setIosPermission('denied');
     }
   };
 
@@ -248,7 +267,8 @@ export default function NavigateTo() {
             {/* Orientation hint — help the user understand the arrow */}
             {!compassTrustworthy && (
               <div className="max-w-sm rounded-lg border border-outline-variant bg-surface-container-low p-3 text-center text-label-sm text-on-surface-variant">
-                {compassGranted === null && 'DeviceOrientationEvent' in window ? (
+                {needsIosPermission && iosPermission !== 'granted' ? (
+                  // iOS 13+ — permission prompt is per-session and requires a gesture.
                   <button
                     onClick={requestCompass}
                     className="inline-flex items-center gap-2 font-semibold text-primary-container underline"
@@ -257,6 +277,9 @@ export default function NavigateTo() {
                     {t('navigate.enableCompass')}
                   </button>
                 ) : (
+                  // Non-iOS, or iOS after permission grant: compass events just
+                  // haven't arrived yet. Usually means the device is still or
+                  // the user hasn't moved the phone at all.
                   <p>{t('navigate.startWalking')}</p>
                 )}
               </div>

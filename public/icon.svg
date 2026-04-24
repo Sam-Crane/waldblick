@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Forest Green background. OS applies its own corner radius. -->
+  <rect width="1024" height="1024" fill="#173124"/>
+
+  <!-- Three-tier pine silhouette, layered top to bottom.
+       Each tier overlaps the one below for a unified shape. -->
+  <g fill="#b0cdbb">
+    <polygon points="512,200 400,400 624,400"/>
+    <polygon points="512,340 340,540 684,540"/>
+    <polygon points="512,480 240,720 784,720"/>
+  </g>
+
+  <!-- Trunk -->
+  <rect x="472" y="712" width="80" height="136" rx="8" fill="#7a3000"/>
+</svg>

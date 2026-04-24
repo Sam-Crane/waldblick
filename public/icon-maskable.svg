@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Maskable spec: safe zone is the 409.6px-radius circle at center (80%).
+       Everything meaningful is scaled to fit inside so Android masks can crop
+       up to 40% from the edges without clipping the tree. -->
+  <rect width="1024" height="1024" fill="#173124"/>
+
+  <g transform="translate(256 256) scale(0.5)">
+    <g fill="#b0cdbb">
+      <polygon points="512,200 400,400 624,400"/>
+      <polygon points="512,340 340,540 684,540"/>
+      <polygon points="512,480 240,720 784,720"/>
+    </g>
+    <rect x="472" y="712" width="80" height="136" rx="8" fill="#7a3000"/>
+  </g>
+</svg>

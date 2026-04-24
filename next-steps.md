@@ -10,14 +10,11 @@ These are the minimum steps between the current repo state and running the [fiel
    - `supabase/migrations/0003_machines.sql`
    - `supabase/migrations/0004_messaging_notifications.sql`
    - `supabase/migrations/0005_discovery_and_profile_autocreate.sql` *(fixes the missing invite code, opens user discovery, fans out "new user joined" notifications)*
-2. **Seed a forest and memberships** so observations attach to a forest and fanout-to-members notifications actually deliver:
-   ```sql
-   insert into public.forests (name, owner_id) values ('Revier Eichberg', '<your user id>');
-   insert into public.memberships (user_id, forest_id, role)
-     select id, (select id from public.forests limit 1), 'forester' from public.profiles;
-   ```
-3. **Generate PWA icons** — `public/icon-192.png`, `public/icon-512.png`, `public/icon-512-maskable.png`. A 512px green-on-cream tree silhouette covers all three. Dev works without them; production install fails without them.
-4. **Run the field test checklist** from [playbook.md](playbook.md). Fix any blockers found.
+   - `supabase/migrations/0006_fix_trigger_security.sql` *(fixes 403 on connection/message inserts — the fanout triggers needed SECURITY DEFINER — plus explicit search_path on every function to satisfy the linter)*
+2. **Seed a forest and memberships** by running `supabase/seeds/demo_forest.sql`. Idempotent; makes every signed-up user a member of *Revier Eichberg* and backfills observations.
+3. **Turn on leaked-password protection** in Supabase Auth → Password Security → enable HaveIBeenPwned. One-click, blocks sign-ups with compromised passwords.
+4. **PWA icons already generated** — `public/icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, plus `apple-touch-icon.png` and `favicon-32.png`. Regenerate any time by editing `public/icon.svg` / `public/icon-maskable.svg` and running `npm run icons`.
+5. **Run the field test checklist** from [playbook.md](playbook.md). Fix any blockers found.
 
 ## Short-horizon — polish that pays off for the demo
 

@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "dev:https": "VITE_HTTPS=1 vite",
+    "icons": "node scripts/generate-icons.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host",
     "typecheck": "tsc --noEmit",
@@ -42,6 +43,7 @@
     "jsdom": "^24.1.0",
     "postcss": "^8.4.40",
     "prettier": "^3.3.3",
+    "sharp": "^0.34.5",
     "tailwindcss": "^3.4.7",
     "typescript": "^5.5.4",
     "vite": "^5.4.0",

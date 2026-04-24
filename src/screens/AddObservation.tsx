@@ -7,6 +7,7 @@ import { defaultPriorityFor } from '@/domain/priority';
 import { averagePositions, trimOutliers, type GpsSample } from '@/domain/gps';
 import { useToast } from '@/components/Toast';
 import MarkdownToolbar from '@/components/MarkdownToolbar';
+import VoiceRecorder from '@/components/VoiceRecorder';
 import type { Category, Priority } from '@/data/types';
 
 const MEASURE_SECONDS = 30;
@@ -34,6 +35,7 @@ export default function AddObservation() {
   };
   const [description, setDescription] = useState('');
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const [audio, setAudio] = useState<{ blob: Blob; mimeType: string; durationMs: number } | null>(null);
   const [photo, setPhoto] = useState<Blob | undefined>(undefined);
   const [coords, setCoords] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
   const [measuring, setMeasuring] = useState(false);
@@ -137,6 +139,7 @@ export default function AddObservation() {
         lat: coords.lat,
         lng: coords.lng,
         photo,
+        audio: audio ?? undefined,
       });
       toast.success(t('record.saved'));
       navigate(`/observations/${id}`);
@@ -195,6 +198,17 @@ export default function AddObservation() {
             />
           </div>
           <p className="text-label-sm text-outline">{t('markdown.hint')}</p>
+        </div>
+
+        {/* Voice note — optional. Captures a quick audio memo alongside
+            the written description. Stored in Dexie and synced as part
+            of the observation. */}
+        <div className="space-y-stack-sm">
+          <label className="flex items-center gap-2 text-label-md text-on-surface-variant">
+            <span className="material-symbols-outlined text-[18px]">mic</span>
+            {t('voice.label')}
+          </label>
+          <VoiceRecorder value={audio} onChange={setAudio} />
         </div>
 
         {/* Category */}

@@ -80,6 +80,7 @@ async function runOp(op: SyncOp): Promise<void> {
   if (op.kind === 'create' || op.kind === 'update') {
     await upsertObservation(observation);
     await uploadPhotosFor(observation.id);
+    await uploadAudioFor(observation.id);
   } else if (op.kind === 'delete') {
     // soft delete: mark deleted_at
     if (!supabase) throw new Error('supabase_missing');
@@ -142,6 +143,44 @@ async function uploadPhotosFor(observationId: string): Promise<void> {
     if (rowErr) throw new Error(`observation_photos.upsert: ${rowErr.message}`);
 
     await db.photos.update(photo.id, { storagePath: path });
+  }
+}
+
+async function uploadAudioFor(observationId: string): Promise<void> {
+  if (!supabase) throw new Error('supabase_missing');
+  const pending = await db.audio.where('observationId').equals(observationId).toArray();
+  for (const clip of pending) {
+    if (clip.storagePath) continue;
+    // Extension from mime type so playback detects format correctly.
+    const ext = clip.mimeType.includes('mp4')
+      ? 'm4a'
+      : clip.mimeType.includes('ogg')
+        ? 'ogg'
+        : 'webm';
+    const path = `${observationId}/${clip.id}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from('observation-audio')
+      .upload(path, clip.blob, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: clip.mimeType,
+      });
+    if (upErr) throw new Error(`storage.upload(audio): ${upErr.message}`);
+
+    const { error: rowErr } = await supabase.from('observation_audio').upsert(
+      {
+        id: clip.id,
+        observation_id: clip.observationId,
+        storage_path: path,
+        mime_type: clip.mimeType,
+        duration_ms: clip.durationMs,
+        captured_at: clip.capturedAt,
+      },
+      { onConflict: 'id' },
+    );
+    if (rowErr) throw new Error(`observation_audio.upsert: ${rowErr.message}`);
+
+    await db.audio.update(clip.id, { storagePath: path });
   }
 }
 

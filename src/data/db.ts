@@ -1,9 +1,10 @@
 import Dexie, { type EntityTable } from 'dexie';
-import type { Observation, ObservationPhoto, SyncOp, Task } from './types';
+import type { Observation, ObservationAudio, ObservationPhoto, SyncOp, Task } from './types';
 
 class WaldblickDb extends Dexie {
   observations!: EntityTable<Observation, 'id'>;
   photos!: EntityTable<ObservationPhoto, 'id'>;
+  audio!: EntityTable<ObservationAudio, 'id'>;
   syncOps!: EntityTable<SyncOp, 'id'>;
   tasks!: EntityTable<Task, 'id'>;
 
@@ -24,6 +25,14 @@ class WaldblickDb extends Dexie {
     this.version(3).stores({
       observations: 'id, capturedAt, updatedAt, priority, category, status, plotId, deletedAt',
       photos: 'id, observationId, capturedAt',
+      syncOps: 'id, createdAt, entity, kind',
+      tasks: 'id, observationId, assigneeId, completedAt',
+    });
+    // v4: add audio table for voice notes on observations.
+    this.version(4).stores({
+      observations: 'id, capturedAt, updatedAt, priority, category, status, plotId, deletedAt',
+      photos: 'id, observationId, capturedAt',
+      audio: 'id, observationId, capturedAt',
       syncOps: 'id, createdAt, entity, kind',
       tasks: 'id, observationId, assigneeId, completedAt',
     });

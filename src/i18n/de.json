@@ -86,6 +86,16 @@
     "heading": "Überschrift",
     "hint": "Formatierung: **fett**, *kursiv*, `Code`, - Listeneinträge, ## Überschrift."
   },
+  "voice": {
+    "label": "Sprachnotiz",
+    "start": "Sprachnotiz aufnehmen",
+    "stop": "Stoppen",
+    "recording": "Nimmt auf…",
+    "saved": "Aufnahme gespeichert",
+    "remove": "Entfernen",
+    "recorded": "Sprachnotiz",
+    "unsupported": "Tonaufnahme ist auf diesem Gerät nicht verfügbar."
+  },
   "tag": {
     "title": "Baum markieren",
     "hint": "Drucken Sie den QR-Code auf eine wetterfeste Etikette und befestigen Sie ihn am Baum. Jedes Smartphone kann ihn mit der Kamera scannen. Android-Geräte können zusätzlich einen NFC-Chip beschreiben — den kann danach jeder scannen.",

@@ -9,6 +9,7 @@ import AssignSheet from '@/components/AssignSheet';
 import ShareToChatSheet from '@/components/ShareToChatSheet';
 import TagActions from '@/components/TagActions';
 import MarkdownText from '@/components/MarkdownText';
+import AudioPlayback from '@/components/AudioPlayback';
 import { db } from '@/data/db';
 import { CONTACTS } from '@/data/mocks';
 import { initials } from '@/data/currentUser';
@@ -122,6 +123,8 @@ export default function ObservationDetails() {
                 </div>
               </div>
             )}
+
+            <AudioPlayback observationId={observation.id} />
 
             <div className="flex items-center justify-between">
               <span className="text-label-sm uppercase text-outline">{t('details.category')}</span>

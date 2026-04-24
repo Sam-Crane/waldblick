@@ -9,6 +9,7 @@ type CreateInput = {
   lat: number;
   lng: number;
   photo?: Blob;
+  audio?: { blob: Blob; mimeType: string; durationMs: number };
   plotId?: string;
 };
 
@@ -38,7 +39,7 @@ export const observationRepo = {
 
     const processed = input.photo ? await processPhoto(input.photo) : undefined;
 
-    await db.transaction('rw', db.observations, db.photos, db.syncOps, async () => {
+    await db.transaction('rw', db.observations, db.photos, db.audio, db.syncOps, async () => {
       await db.observations.add(observation);
       if (processed) {
         await db.photos.add({
@@ -47,6 +48,16 @@ export const observationRepo = {
           blob: processed.blob,
           width: processed.width,
           height: processed.height,
+          capturedAt: now,
+        });
+      }
+      if (input.audio) {
+        await db.audio.add({
+          id: uuid(),
+          observationId: id,
+          blob: input.audio.blob,
+          mimeType: input.audio.mimeType,
+          durationMs: input.audio.durationMs,
           capturedAt: now,
         });
       }

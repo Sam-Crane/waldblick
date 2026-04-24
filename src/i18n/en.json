@@ -86,6 +86,16 @@
     "heading": "Heading",
     "hint": "Formatting: **bold**, *italic*, `code`, - list items, ## heading."
   },
+  "voice": {
+    "label": "Voice note",
+    "start": "Record voice note",
+    "stop": "Stop",
+    "recording": "Recording…",
+    "saved": "Recording saved",
+    "remove": "Remove",
+    "recorded": "Voice note",
+    "unsupported": "Audio recording isn't available on this device."
+  },
   "tag": {
     "title": "Tag this tree",
     "hint": "Print the QR on a weatherproof label and attach it to the tree. Any phone camera can scan it. Android devices can also write the observation URL to an NFC tag — after that, any phone (iPhone or Android) scans it natively.",

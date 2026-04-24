@@ -43,6 +43,16 @@ export type ObservationPhoto = {
   storagePath?: string; // set once uploaded to Supabase Storage
 };
 
+export type ObservationAudio = {
+  id: string;
+  observationId: string;
+  blob: Blob;
+  mimeType: string;
+  durationMs: number;
+  capturedAt: string;
+  storagePath?: string;
+};
+
 export type SyncOp = {
   id: string;
   kind: 'create' | 'update' | 'delete';

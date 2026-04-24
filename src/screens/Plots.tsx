@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import TopBar from '@/components/Layout/TopBar';
 import { useSession } from '@/data/session';
 import { plotsRepo } from '@/data/plotsRepo';
+import { cacheAllPlots } from '@/map/autoCache';
 import type { Plot } from '@/data/types';
 import { useToast } from '@/components/Toast';
 import { useTranslation } from '@/i18n';
@@ -15,6 +16,7 @@ export default function Plots() {
   const [plots, setPlots] = useState<Plot[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [prefetch, setPrefetch] = useState<{ done: number; total: number } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -26,6 +28,14 @@ export default function Plots() {
   useEffect(() => {
     void load();
   }, []);
+
+  const downloadForest = async () => {
+    if (plots.length === 0) return;
+    setPrefetch({ done: 0, total: plots.length });
+    await cacheAllPlots(plots, (done, total) => setPrefetch({ done, total }));
+    setPrefetch(null);
+    toast.success(t('plots.downloadDone'));
+  };
 
   const remove = async (p: Plot) => {
     if (!confirm(t('plots.deleteConfirm', { name: p.name }))) return;
@@ -74,6 +84,25 @@ export default function Plots() {
           <p className="mb-stack-md rounded-lg border border-outline-variant bg-surface-container-low p-3 text-label-md text-on-surface-variant">
             {t('plots.demoNote')}
           </p>
+        )}
+
+        {!isDemoMode && !loading && plots.length > 0 && (
+          <button
+            onClick={downloadForest}
+            disabled={prefetch !== null}
+            className="touch-safe mb-stack-md flex w-full items-center justify-center gap-2 rounded-lg border-2 border-primary-container text-primary-container active:scale-95 disabled:opacity-60"
+          >
+            <span
+              className={`material-symbols-outlined ${prefetch ? 'animate-spin' : ''}`}
+            >
+              {prefetch ? 'sync' : 'download_for_offline'}
+            </span>
+            <span className="text-label-md font-semibold uppercase tracking-widest">
+              {prefetch
+                ? t('plots.downloading', { done: prefetch.done, total: prefetch.total })
+                : t('plots.downloadForest')}
+            </span>
+          </button>
         )}
 
         {loading ? (

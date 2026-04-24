@@ -1,11 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '@/components/Layout/TopBar';
 import { useTranslation } from '@/i18n';
 import { observationRepo } from '@/data/observationRepo';
 import { defaultPriorityFor } from '@/domain/priority';
+import { averagePositions, trimOutliers, type GpsSample } from '@/domain/gps';
 import { useToast } from '@/components/Toast';
 import type { Category, Priority } from '@/data/types';
+
+const MEASURE_SECONDS = 30;
 
 const priorities: Priority[] = ['low', 'medium', 'critical'];
 const categories: Category[] = ['beetle', 'thinning', 'reforestation', 'windthrow', 'erosion', 'machine', 'other'];
@@ -30,20 +33,85 @@ export default function AddObservation() {
   };
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState<Blob | undefined>(undefined);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [locating, setLocating] = useState(false);
+  const [coords, setCoords] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
+  const [measuring, setMeasuring] = useState(false);
+  const [countdown, setCountdown] = useState(MEASURE_SECONDS);
+  const samplesRef = useRef<GpsSample[]>([]);
+  const watchIdRef = useRef<number | null>(null);
+  const tickRef = useRef<number | null>(null);
 
-  const requestLocation = () => {
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
+  // 30-second GPS averaging. Stream positions via watchPosition, store
+  // them, then inverse-variance-weight into a single fix. User can stop
+  // early by tapping "Use now".
+  const startMeasuring = () => {
+    if (!navigator.geolocation) {
+      toast.error(t('record.gpsUnavailable'));
+      return;
+    }
+    samplesRef.current = [];
+    setCountdown(MEASURE_SECONDS);
+    setMeasuring(true);
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
+        samplesRef.current.push({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+          at: pos.timestamp,
+        });
       },
-      () => setLocating(false),
-      { enableHighAccuracy: true, timeout: 10000 },
+      () => {
+        /* individual errors are tolerable — we keep going */
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 },
+    );
+
+    tickRef.current = window.setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) {
+          finishMeasuring();
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1_000);
+  };
+
+  const finishMeasuring = () => {
+    if (watchIdRef.current != null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    if (tickRef.current != null) {
+      clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
+    setMeasuring(false);
+
+    const raw = samplesRef.current;
+    if (raw.length === 0) {
+      toast.error(t('record.gpsNoSamples'));
+      return;
+    }
+    const cleaned = trimOutliers(raw);
+    const fix = averagePositions(cleaned.length > 0 ? cleaned : raw);
+    setCoords({ lat: fix.lat, lng: fix.lng, accuracy: fix.accuracy });
+    toast.success(
+      t('record.gpsDone', {
+        samples: fix.samples,
+        accuracy: Math.round(fix.accuracy),
+      }),
     );
   };
+
+  // Clean up timers if the screen unmounts mid-measurement.
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current != null) navigator.geolocation.clearWatch(watchIdRef.current);
+      if (tickRef.current != null) clearInterval(tickRef.current);
+    };
+  }, []);
 
   const onPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -170,7 +238,8 @@ export default function AddObservation() {
           </div>
         </div>
 
-        {/* Location */}
+        {/* Location — 30s averaging hold. Accuracy improves 2-3× vs a
+            single reading, which matters under forest canopy. */}
         <div className="space-y-stack-sm">
           <div className="flex items-end justify-between">
             <label className="flex items-center gap-2 text-label-md text-on-surface-variant">
@@ -179,22 +248,71 @@ export default function AddObservation() {
             </label>
             {coords && (
               <span className="text-label-sm tracking-widest text-primary">
-                {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)} · ±{Math.round(coords.accuracy)}m
               </span>
             )}
           </div>
-          {coords ? (
-            <div className="flex h-32 items-center justify-center rounded-xl border border-outline-variant bg-surface-container-low">
+
+          {measuring ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-primary bg-primary-fixed p-4">
+              <div className="relative h-16 w-16">
+                <svg className="h-16 w-16 -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="28" fill="none" stroke="currentColor" strokeWidth="4" className="text-outline-variant" />
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    className="text-primary transition-[stroke-dashoffset] duration-1000"
+                    strokeDasharray={`${2 * Math.PI * 28}`}
+                    strokeDashoffset={`${2 * Math.PI * 28 * (countdown / MEASURE_SECONDS)}`}
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-label-md font-bold text-primary">
+                  {countdown}
+                </span>
+              </div>
+              <p className="text-label-md font-semibold text-primary">
+                {t('record.measuring', { n: samplesRef.current.length })}
+              </p>
+              <p className="text-label-sm text-on-surface-variant">{t('record.measuringHint')}</p>
+              <button
+                type="button"
+                onClick={finishMeasuring}
+                className="touch-safe mt-1 rounded-lg bg-primary px-4 text-on-primary"
+              >
+                <span className="text-label-md font-semibold uppercase tracking-widest">
+                  {t('record.useNow')}
+                </span>
+              </button>
+            </div>
+          ) : coords ? (
+            <div className="flex h-32 flex-col items-center justify-center rounded-xl border border-outline-variant bg-surface-container-low">
               <span className="material-symbols-outlined filled text-4xl text-safety">location_on</span>
+              <button
+                type="button"
+                onClick={startMeasuring}
+                className="mt-2 text-label-sm font-semibold text-primary-container underline"
+              >
+                {t('record.remeasure')}
+              </button>
             </div>
           ) : (
             <button
               type="button"
-              onClick={requestLocation}
-              disabled={locating}
-              className="touch-safe w-full rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low text-on-surface-variant"
+              onClick={startMeasuring}
+              className="touch-safe w-full rounded-lg border-2 border-dashed border-outline-variant bg-surface-container-low p-4 text-on-surface-variant"
             >
-              {locating ? t('record.locating') : t('record.captureLocation')}
+              <span className="flex items-center justify-center gap-2">
+                <span className="material-symbols-outlined">my_location</span>
+                <span className="font-semibold">{t('record.startMeasuring')}</span>
+              </span>
+              <span className="mt-1 block text-label-sm text-outline">
+                {t('record.startMeasuringHint', { n: MEASURE_SECONDS })}
+              </span>
             </button>
           )}
         </div>

@@ -74,7 +74,12 @@ export const plotsRepo = {
       .select()
       .single();
     if (error || !data) return { ok: false, error: error?.message ?? 'insert_failed' };
-    return { ok: true, plot: toDomain(data as RemotePlot) };
+    const plot = toDomain(data as RemotePlot);
+    // Write-behind: prefetch tiles across the plot bbox for offline use.
+    void import('@/map/autoCache').then((m) =>
+      m.cacheAroundBounds(plot.boundary.coordinates[0] ?? []),
+    );
+    return { ok: true, plot };
   },
 
   async delete(id: string): Promise<boolean> {

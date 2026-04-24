@@ -62,6 +62,9 @@ export const observationRepo = {
 
     // Kick off a sync attempt. If offline or Supabase unset, it no-ops safely.
     void import('./syncEngine').then((m) => m.syncNow());
+    // Write-behind: prefetch map tiles around this observation so the user
+    // can revisit the area offline. No-op when offline.
+    void import('@/map/autoCache').then((m) => m.cacheAroundPoint(input.lat, input.lng));
     return id;
   },
 

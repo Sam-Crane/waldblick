@@ -15,3 +15,9 @@ coverage
 dev-dist
 certs/
 supabase/.temp/
+
+# Capacitor native shells — committed state lives in capacitor.config.ts.
+# Run `npm run cap:add:ios` / `npm run cap:add:android` locally to
+# regenerate these directories.
+/ios
+/android

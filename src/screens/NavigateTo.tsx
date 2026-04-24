@@ -4,6 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
 import { db } from '@/data/db';
 import { compassLabel, haversineMeters, initialBearing } from '@/domain/geo';
+import { isNative } from '@/platform';
 import { useTranslation } from '@/i18n';
 
 // Full-screen "walk me to the tree" mode. Works offline, no external APIs,
@@ -50,6 +51,7 @@ export default function NavigateTo() {
   // stream as soon as we attach the listener. Detecting that up-front lets
   // us avoid showing an "Enable compass" button where it isn't needed.
   const needsIosPermission =
+    !isNative() && // Capacitor native shell handles permission natively and persistently
     typeof window !== 'undefined' &&
     typeof (
       window.DeviceOrientationEvent as unknown as {

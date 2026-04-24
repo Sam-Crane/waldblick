@@ -79,6 +79,13 @@
     "unknown": "Location error.",
     "lowAccuracy": "Low accuracy (±{m} m). Turn on \u201cPrecise Location\u201d in iOS settings."
   },
+  "markdown": {
+    "bold": "Bold",
+    "italic": "Italic",
+    "bullet": "Bullet list",
+    "heading": "Heading",
+    "hint": "Formatting: **bold**, *italic*, `code`, - list items, ## heading."
+  },
   "tag": {
     "title": "Tag this tree",
     "hint": "Print the QR on a weatherproof label and attach it to the tree. Any phone camera can scan it. Android devices can also write the observation URL to an NFC tag — after that, any phone (iPhone or Android) scans it natively.",

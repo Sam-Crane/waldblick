@@ -79,6 +79,13 @@
     "unknown": "Standort-Fehler.",
     "lowAccuracy": "Ungenaue Position (±{m} m). \u201ePrecise Location\u201c in iOS-Einstellungen aktivieren."
   },
+  "markdown": {
+    "bold": "Fett",
+    "italic": "Kursiv",
+    "bullet": "Liste",
+    "heading": "Überschrift",
+    "hint": "Formatierung: **fett**, *kursiv*, `Code`, - Listeneinträge, ## Überschrift."
+  },
   "tag": {
     "title": "Baum markieren",
     "hint": "Drucken Sie den QR-Code auf eine wetterfeste Etikette und befestigen Sie ihn am Baum. Jedes Smartphone kann ihn mit der Kamera scannen. Android-Geräte können zusätzlich einen NFC-Chip beschreiben — den kann danach jeder scannen.",

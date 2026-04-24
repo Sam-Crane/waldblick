@@ -6,6 +6,7 @@ import { observationRepo } from '@/data/observationRepo';
 import { defaultPriorityFor } from '@/domain/priority';
 import { averagePositions, trimOutliers, type GpsSample } from '@/domain/gps';
 import { useToast } from '@/components/Toast';
+import MarkdownToolbar from '@/components/MarkdownToolbar';
 import type { Category, Priority } from '@/data/types';
 
 const MEASURE_SECONDS = 30;
@@ -32,6 +33,7 @@ export default function AddObservation() {
     setPriorityTouched(true);
   };
   const [description, setDescription] = useState('');
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
   const [photo, setPhoto] = useState<Blob | undefined>(undefined);
   const [coords, setCoords] = useState<{ lat: number; lng: number; accuracy: number } | null>(null);
   const [measuring, setMeasuring] = useState(false);
@@ -177,13 +179,22 @@ export default function AddObservation() {
             <span className="material-symbols-outlined text-[18px]">description</span>
             {t('record.description')}
           </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder={t('record.descriptionPlaceholder')}
-            className="min-h-[120px] w-full rounded-md border-b-2 border-outline-variant bg-surface-container-lowest p-4 text-body-md outline-none focus:border-primary-container"
-          />
+          <div className="overflow-hidden rounded-md border-b-2 border-outline-variant bg-surface-container-lowest focus-within:border-primary-container">
+            <MarkdownToolbar
+              textareaRef={descriptionRef}
+              value={description}
+              onChange={setDescription}
+            />
+            <textarea
+              id="description"
+              ref={descriptionRef}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t('record.descriptionPlaceholder')}
+              className="min-h-[120px] w-full bg-transparent p-4 text-body-md outline-none"
+            />
+          </div>
+          <p className="text-label-sm text-outline">{t('markdown.hint')}</p>
         </div>
 
         {/* Category */}

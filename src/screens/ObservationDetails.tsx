@@ -8,6 +8,7 @@ import SpeciesRecommendations from '@/components/SpeciesRecommendations';
 import AssignSheet from '@/components/AssignSheet';
 import ShareToChatSheet from '@/components/ShareToChatSheet';
 import TagActions from '@/components/TagActions';
+import MarkdownText from '@/components/MarkdownText';
 import { db } from '@/data/db';
 import { CONTACTS } from '@/data/mocks';
 import { initials } from '@/data/currentUser';
@@ -116,8 +117,8 @@ export default function ObservationDetails() {
             {observation.description && (
               <div className="space-y-2">
                 <h3 className="text-label-sm uppercase tracking-widest text-outline">{t('details.description')}</h3>
-                <div className="rounded-lg border-2 border-surface-container p-4">
-                  <p className="text-body-lg italic leading-relaxed text-on-surface">&ldquo;{observation.description}&rdquo;</p>
+                <div className="rounded-lg border-2 border-surface-container p-4 text-on-surface">
+                  <MarkdownText source={observation.description} />
                 </div>
               </div>
             )}

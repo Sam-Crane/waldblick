@@ -12,6 +12,10 @@ type Props = {
   onShowPlotsChange: (v: boolean) => void;
   showObservations: boolean;
   onShowObservationsChange: (v: boolean) => void;
+  showMachines: boolean;
+  onShowMachinesChange: (v: boolean) => void;
+  broadcasting: boolean;
+  onBroadcastChange: (v: boolean) => void;
 };
 
 export default function LayerPanel({
@@ -25,6 +29,10 @@ export default function LayerPanel({
   onShowPlotsChange,
   showObservations,
   onShowObservationsChange,
+  showMachines,
+  onShowMachinesChange,
+  broadcasting,
+  onBroadcastChange,
 }: Props) {
   const t = useTranslation();
   const base = LAYERS.filter((l) => l.kind === 'base');
@@ -73,6 +81,17 @@ export default function LayerPanel({
             onChange={() => onShowObservationsChange(!showObservations)}
           />
           <Check label={t('mapPanel.plots')} checked={showPlots} onChange={() => onShowPlotsChange(!showPlots)} />
+          <Check
+            label={t('mapPanel.machines')}
+            checked={showMachines}
+            onChange={() => onShowMachinesChange(!showMachines)}
+          />
+          <Check
+            label={t('mapPanel.broadcastPosition')}
+            hint={t('mapPanel.broadcastHint')}
+            checked={broadcasting}
+            onChange={() => onBroadcastChange(!broadcasting)}
+          />
         </Section>
 
         <Section title={t('mapPanel.overlays')}>

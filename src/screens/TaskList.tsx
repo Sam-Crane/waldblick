@@ -5,6 +5,7 @@ import TopBar from '@/components/Layout/TopBar';
 import PriorityBadge from '@/components/PriorityBadge';
 import FilterChip, { FilterSheet, ToggleRow } from '@/components/FilterChip';
 import { db } from '@/data/db';
+import { useCurrentUser } from '@/data/currentUser';
 import type { Category, Priority } from '@/data/types';
 import { useTranslation } from '@/i18n';
 import {
@@ -21,11 +22,17 @@ type OpenSheet = 'none' | 'priority' | 'category' | 'date';
 
 export default function TaskList() {
   const t = useTranslation();
+  const me = useCurrentUser();
   const observations = useLiveQuery(() => db.observations.toArray(), []) ?? [];
+  const myTasks = useLiveQuery(
+    () => db.tasks.where('assigneeId').equals(me.id).toArray(),
+    [me.id],
+  ) ?? [];
 
   const [filters, setFilters] = useState<TaskFilters>(emptyFilters);
   const [sheet, setSheet] = useState<OpenSheet>('none');
   const [origin, setOrigin] = useState<{ lat: number; lng: number } | undefined>();
+  const [mineOnly, setMineOnly] = useState(false);
 
   useEffect(() => {
     if (!filters.byProximity || origin) return;
@@ -36,7 +43,9 @@ export default function TaskList() {
     );
   }, [filters.byProximity, origin]);
 
-  const results = useMemo(() => applyFilters(observations, filters, origin), [observations, filters, origin]);
+  const mineIds = useMemo(() => new Set(myTasks.map((tk) => tk.observationId)), [myTasks]);
+  const scoped = mineOnly ? observations.filter((o) => mineIds.has(o.id)) : observations;
+  const results = useMemo(() => applyFilters(scoped, filters, origin), [scoped, filters, origin]);
 
   const togglePriority = (p: Priority) => {
     const next = new Set(filters.priorities);
@@ -74,6 +83,13 @@ export default function TaskList() {
             <span className="text-label-sm text-outline">{t('tasks.count', { n: results.length })}</span>
           </div>
           <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
+            <FilterChip
+              active={mineOnly}
+              icon="assignment_ind"
+              label={t('filters.mine')}
+              onClick={() => setMineOnly((v) => !v)}
+              count={mineOnly ? myTasks.length : undefined}
+            />
             <FilterChip
               active={filters.priorities.size > 0}
               icon="priority_high"

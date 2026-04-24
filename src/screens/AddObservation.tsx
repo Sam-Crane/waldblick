@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import TopBar from '@/components/Layout/TopBar';
 import { useTranslation } from '@/i18n';
 import { observationRepo } from '@/data/observationRepo';
+import { defaultPriorityFor } from '@/domain/priority';
 import type { Category, Priority } from '@/data/types';
 
 const priorities: Priority[] = ['low', 'medium', 'critical'];
@@ -11,8 +12,20 @@ const categories: Category[] = ['beetle', 'thinning', 'reforestation', 'windthro
 export default function AddObservation() {
   const navigate = useNavigate();
   const t = useTranslation();
-  const [priority, setPriority] = useState<Priority>('medium');
   const [category, setCategory] = useState<Category>('other');
+  const [priority, setPriority] = useState<Priority>(() => defaultPriorityFor('other'));
+  const [priorityTouched, setPriorityTouched] = useState(false);
+
+  // When the user picks a category, auto-suggest a priority (but only if
+  // they haven't manually changed it yet — don't clobber their choice).
+  const pickCategory = (c: Category) => {
+    setCategory(c);
+    if (!priorityTouched) setPriority(defaultPriorityFor(c));
+  };
+  const pickPriority = (p: Priority) => {
+    setPriority(p);
+    setPriorityTouched(true);
+  };
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState<Blob | undefined>(undefined);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -103,7 +116,7 @@ export default function AddObservation() {
               <button
                 key={c}
                 type="button"
-                onClick={() => setCategory(c)}
+                onClick={() => pickCategory(c)}
                 className={`touch-safe rounded-lg border-2 px-3 text-label-md transition ${
                   category === c
                     ? 'border-primary-container bg-primary-container text-on-primary'
@@ -118,16 +131,21 @@ export default function AddObservation() {
 
         {/* Priority */}
         <div className="space-y-stack-sm">
-          <label className="flex items-center gap-2 text-label-md text-on-surface-variant">
-            <span className="material-symbols-outlined text-[18px]">priority_high</span>
-            {t('record.priority')}
-          </label>
+          <div className="flex items-end justify-between">
+            <label className="flex items-center gap-2 text-label-md text-on-surface-variant">
+              <span className="material-symbols-outlined text-[18px]">priority_high</span>
+              {t('record.priority')}
+            </label>
+            {!priorityTouched && (
+              <span className="text-label-sm text-outline">{t('record.autoSuggested')}</span>
+            )}
+          </div>
           <div className="grid grid-cols-3 gap-3">
             {priorities.map((p) => (
               <button
                 key={p}
                 type="button"
-                onClick={() => setPriority(p)}
+                onClick={() => pickPriority(p)}
                 className={`touch-safe flex flex-col items-center justify-center rounded-lg border-2 px-2 py-3 transition active:scale-95 ${
                   priority === p
                     ? 'border-primary-container bg-primary-container text-on-primary shadow-md'

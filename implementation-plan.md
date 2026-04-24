@@ -146,7 +146,9 @@ This is where most products fail. Budget accordingly.
 
 Done when: phone in airplane mode captures 10 observations including photos, returns online, all sync without user action, and another phone sees them live on the map.
 
-### Phase 4 — Prioritization + coordination + species recommendations (2.5 days)
+### Phase 4 — Prioritization + coordination + species recommendations (2.5 days) ✅ COMPLETE
+
+Includes machine positions (scenario #4): lightweight `machines` table, 30s broadcast interval, realtime subscription, distinct icons per machine kind (harvester / forwarder / maintenance / other), stale-fade after 5 minutes without a ping.
 
 - **Auto-priority**: compute on server via a Postgres trigger. Inputs: category (beetle/erosion default to critical), proximity to other criticals (within 50m raises medium→critical), age (unresolved critical >48h stays critical; adds `stale` flag).
 - **Task assignment**: from observation detail, "Assign" picker with forest members. Assignee sees it in their task list filter "Assigned to me".

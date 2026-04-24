@@ -5,7 +5,7 @@
 -- Plus: storage bucket `observation-photos`.
 -- RLS: members of a forest can read/write its data; writes are attributed to auth.uid().
 
-create extension if not exists "uuid-ossp";
+-- gen_random_uuid() is built into Postgres 13+ — no extension needed on Supabase.
 
 -- profiles (1:1 with auth.users) ------------------------------------------------
 create table if not exists public.profiles (
@@ -26,7 +26,7 @@ create policy "profiles_self_update" on public.profiles
 
 -- forests + membership ---------------------------------------------------------
 create table if not exists public.forests (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   name text not null,
   owner_id uuid not null references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now()
@@ -52,7 +52,7 @@ create policy "forests_member_select" on public.forests
 
 -- plots ------------------------------------------------------------------------
 create table if not exists public.plots (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   forest_id uuid not null references public.forests(id) on delete cascade,
   name text not null,
   color text,
@@ -127,7 +127,7 @@ create policy "photos_author_insert" on public.observation_photos
 
 -- tasks -----------------------------------------------------------------------
 create table if not exists public.tasks (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   observation_id uuid not null references public.observations(id) on delete cascade,
   assignee_id uuid references public.profiles(id) on delete set null,
   due_at timestamptz,

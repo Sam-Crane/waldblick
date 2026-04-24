@@ -53,6 +53,29 @@ export type SyncOp = {
   lastError?: string;
 };
 
+export type MachineKind = 'harvester' | 'forwarder' | 'maintenance' | 'other';
+
+export type Machine = {
+  id: string;
+  userId: string;
+  forestId?: string;
+  kind: MachineKind;
+  label?: string;
+  lat: number;
+  lng: number;
+  heading?: number;
+  lastSeenAt: string; // ISO UTC
+};
+
+export type Task = {
+  id: string;
+  observationId: string;
+  assigneeId: string;
+  dueAt?: string;
+  completedAt?: string;
+  createdAt: string;
+};
+
 export type Contact = {
   id: string;
   name: string;

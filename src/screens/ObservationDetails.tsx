@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
 import PriorityBadge from '@/components/PriorityBadge';
 import WeatherPanel from '@/components/WeatherPanel';
+import SpeciesRecommendations from '@/components/SpeciesRecommendations';
+import AssignSheet from '@/components/AssignSheet';
 import { db } from '@/data/db';
+import { CONTACTS } from '@/data/mocks';
+import { initials } from '@/data/currentUser';
 import { useTranslation } from '@/i18n';
 
 export default function ObservationDetails() {
@@ -13,6 +18,10 @@ export default function ObservationDetails() {
 
   const observation = useLiveQuery(() => (id ? db.observations.get(id) : undefined), [id]);
   const photo = useLiveQuery(() => (id ? db.photos.where('observationId').equals(id).first() : undefined), [id]);
+  const tasks = useLiveQuery(() => (id ? db.tasks.where('observationId').equals(id).toArray() : []), [id]) ?? [];
+  const [assignOpen, setAssignOpen] = useState(false);
+
+  const assignee = tasks[0] ? CONTACTS.find((c) => c.id === tasks[0].assigneeId) : undefined;
 
   if (!observation) {
     return (
@@ -98,21 +107,57 @@ export default function ObservationDetails() {
                 {t(`category.${observation.category}`)}
               </span>
             </div>
+
+            {assignee && (
+              <div className="flex items-center justify-between rounded-lg bg-surface-container-low p-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-container text-on-primary text-label-sm font-bold">
+                    {initials(assignee.name)}
+                  </div>
+                  <div>
+                    <p className="text-label-sm uppercase text-outline">{t('assign.assignedTo')}</p>
+                    <p className="text-body-md font-medium">{assignee.name}</p>
+                  </div>
+                </div>
+                {tasks[0]?.dueAt && (
+                  <span className="text-label-sm text-outline">
+                    {new Date(tasks[0].dueAt).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
         <div className="mt-stack-lg">
           <WeatherPanel lat={observation.lat} lng={observation.lng} />
         </div>
+
+        {observation.category === 'reforestation' && (
+          <div className="mt-stack-lg">
+            <SpeciesRecommendations lat={observation.lat} lng={observation.lng} />
+          </div>
+        )}
       </div>
 
       {/* Action */}
-      <div className="fixed bottom-0 left-0 z-50 w-full border-t border-outline-variant bg-surface-container-lowest p-margin-main">
-        <button className="touch-safe flex w-full items-center justify-center gap-2 rounded-lg bg-primary text-on-primary shadow-lg active:scale-[0.98]">
-          <span className="material-symbols-outlined">task_alt</span>
-          <span className="font-semibold uppercase tracking-widest">{t('details.takeAction')}</span>
+      <div className="fixed bottom-0 left-0 z-40 w-full border-t border-outline-variant bg-surface-container-lowest p-margin-main">
+        <button
+          onClick={() => setAssignOpen(true)}
+          className="touch-safe flex w-full items-center justify-center gap-2 rounded-lg bg-primary text-on-primary shadow-lg active:scale-[0.98]"
+        >
+          <span className="material-symbols-outlined">assignment_ind</span>
+          <span className="font-semibold uppercase tracking-widest">
+            {assignee ? t('assign.reassign') : t('assign.button')}
+          </span>
         </button>
       </div>
+
+      <AssignSheet
+        open={assignOpen}
+        observationId={observation.id}
+        onClose={() => setAssignOpen(false)}
+      />
     </div>
   );
 }

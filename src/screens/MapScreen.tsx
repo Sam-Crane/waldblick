@@ -10,6 +10,8 @@ import RouteCard from '@/map/RouteCard';
 import MapFilterBar from '@/map/MapFilterBar';
 import GeoDebugPill from '@/map/GeoDebugPill';
 import DownloadAreaButton from '@/map/DownloadAreaButton';
+import { useMachines } from '@/data/useMachines';
+import { useCurrentUser } from '@/data/currentUser';
 import { db } from '@/data/db';
 import { PLOTS } from '@/data/mocks';
 import type { Priority } from '@/data/types';
@@ -23,6 +25,7 @@ type StoredLayerState = {
   activeOverlayIds: string[];
   showPlots: boolean;
   showObservations: boolean;
+  showMachines: boolean;
 };
 
 const DEFAULT_STATE: StoredLayerState = {
@@ -30,6 +33,7 @@ const DEFAULT_STATE: StoredLayerState = {
   activeOverlayIds: ['overlay-alkis-parzellar'],
   showPlots: true,
   showObservations: true,
+  showMachines: true,
 };
 
 function loadLayers(): StoredLayerState {
@@ -52,6 +56,7 @@ type RouteState =
 
 export default function MapScreen() {
   const t = useTranslation();
+  const me = useCurrentUser();
   const observations = useLiveQuery(() => db.observations.toArray(), []) ?? [];
 
   const [layerState, setLayerState] = useState<StoredLayerState>(loadLayers);
@@ -59,7 +64,14 @@ export default function MapScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteState>({ kind: 'idle' });
   const [priorityFilter, setPriorityFilter] = useState<Set<Priority>>(new Set());
+  const [broadcasting, setBroadcasting] = useState(false);
   const mapRef = useRef<MapCanvasHandle>(null);
+
+  // Broadcast interval: derive machine kind from user role.
+  const machineKind = me.role === 'operator' ? 'harvester' : 'other';
+  const machines = useMachines(
+    broadcasting ? { kind: machineKind, label: me.name } : null,
+  );
 
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
@@ -131,10 +143,12 @@ export default function MapScreen() {
             ref={mapRef}
             observations={visibleObservations}
             plots={PLOTS}
+            machines={machines}
             baseLayerId={layerState.baseLayerId}
             activeOverlayIds={layerState.activeOverlayIds}
             showPlots={layerState.showPlots}
             showObservations={layerState.showObservations}
+            showMachines={layerState.showMachines}
             onMarkerTap={setSelectedId}
             onLongPress={onLongPress}
             routeCoords={route.kind === 'ready' ? route.route.coordinates : undefined}
@@ -206,6 +220,10 @@ export default function MapScreen() {
         onShowPlotsChange={(v) => setLayerState((s) => ({ ...s, showPlots: v }))}
         showObservations={layerState.showObservations}
         onShowObservationsChange={(v) => setLayerState((s) => ({ ...s, showObservations: v }))}
+        showMachines={layerState.showMachines}
+        onShowMachinesChange={(v) => setLayerState((s) => ({ ...s, showMachines: v }))}
+        broadcasting={broadcasting}
+        onBroadcastChange={setBroadcasting}
       />
       <ObservationSheet id={selectedId} onClose={() => setSelectedId(null)} />
 

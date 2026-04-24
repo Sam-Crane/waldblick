@@ -1,6 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import maplibregl, { type Map, type Marker } from 'maplibre-gl';
-import type { Observation, Plot, Priority } from '@/data/types';
+import type { Machine, MachineKind, Observation, Plot, Priority } from '@/data/types';
+import { isStale } from '@/data/machinesRepo';
 import { LAYERS, layerById } from './layers';
 import { tilesTemplate } from './wms';
 
@@ -11,15 +12,33 @@ export type MapCanvasHandle = {
 type Props = {
   observations: Observation[];
   plots?: Plot[];
+  machines?: Machine[];
   baseLayerId: string;
   activeOverlayIds: string[];
   showPlots?: boolean;
   showObservations?: boolean;
+  showMachines?: boolean;
   onMarkerTap: (id: string) => void;
   onLongPress?: (latlng: { lat: number; lng: number }) => void;
   routeCoords?: [number, number][]; // [lng, lat][]
   initialCenter?: { lat: number; lng: number };
 };
+
+const MACHINE_ICON: Record<MachineKind, string> = {
+  harvester: 'construction',
+  forwarder: 'local_shipping',
+  maintenance: 'build',
+  other: 'agriculture',
+};
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 const DEFAULT_CENTER: [number, number] = [11.575, 48.137]; // Munich, Bavaria
 const DEFAULT_ZOOM = 10;
@@ -39,10 +58,12 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   {
     observations,
     plots = [],
+    machines = [],
     baseLayerId,
     activeOverlayIds,
     showPlots = true,
     showObservations = true,
+    showMachines = true,
     onMarkerTap,
     onLongPress,
     routeCoords,
@@ -56,6 +77,7 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Map | null>(null);
   const markersRef = useRef<Marker[]>([]);
+  const machineMarkersRef = useRef<Marker[]>([]);
   const [ready, setReady] = useState(false);
 
   // Init once
@@ -334,6 +356,30 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     });
     markersRef.current = fresh;
   }, [observations, ready, onMarkerTap, showObservations]);
+
+  // Machine markers — separate from observations so they can toggle independently
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    for (const m of machineMarkersRef.current) m.remove();
+    if (!showMachines) {
+      machineMarkersRef.current = [];
+      return;
+    }
+    const fresh: Marker[] = machines.map((m) => {
+      const stale = isStale(m);
+      const el = document.createElement('div');
+      el.className = `flex flex-col items-center ${stale ? 'opacity-50' : ''}`;
+      el.innerHTML = `
+        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-on-secondary shadow-lg border-2 border-white">
+          <span class="material-symbols-outlined text-[18px]">${MACHINE_ICON[m.kind]}</span>
+        </span>
+        ${m.label ? `<span class="mt-0.5 rounded bg-inverse-surface/80 px-1.5 py-0.5 text-[10px] font-bold text-inverse-on-surface backdrop-blur-md">${escapeHtml(m.label)}</span>` : ''}
+      `;
+      return new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([m.lng, m.lat]).addTo(map);
+    });
+    machineMarkersRef.current = fresh;
+  }, [machines, ready, showMachines]);
 
   return <div ref={ref} className="absolute inset-0" />;
 });

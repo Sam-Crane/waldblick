@@ -66,6 +66,9 @@
     "overlays": "Overlays",
     "observations": "Observations",
     "plots": "Plots",
+    "machines": "Machines",
+    "broadcastPosition": "Share my position",
+    "broadcastHint": "Other team members see your location every 30 seconds.",
     "downloadOnly": "Offline on request only",
     "attributionNote": "Layers load from their respective services when enabled. Offline availability depends on local cache."
   },
@@ -144,7 +147,26 @@
     "location": "Location",
     "captureLocation": "Capture GPS Position",
     "locating": "Locating…",
-    "submit": "Save Observation"
+    "submit": "Save Observation",
+    "autoSuggested": "Auto-suggested"
+  },
+  "assign": {
+    "title": "Assign Task",
+    "button": "Assign",
+    "reassign": "Reassign",
+    "assignedTo": "Assigned to",
+    "dueAt": "Due date (optional)",
+    "busy": "Saving…"
+  },
+  "species": {
+    "title": "Species Recommendations",
+    "poweredBy": "LfU Soil Data",
+    "loading": "Fetching soil data…",
+    "error": "Could not load soil data.",
+    "noSoil": "No soil data available for this location.",
+    "noMatch": "No matches in the species matrix.",
+    "soil": "Soil Class",
+    "source": "Source: {source}"
   },
   "priority": {
     "critical": "Critical",
@@ -164,6 +186,7 @@
     "priority": "Priority",
     "category": "Category",
     "proximity": "Nearby",
+    "mine": "Assigned to me",
     "dateTitle": "Date Range",
     "date": {
       "all": "All time",

@@ -66,6 +66,9 @@
     "overlays": "Fachebenen",
     "observations": "Beobachtungen",
     "plots": "Parzellen",
+    "machines": "Maschinen",
+    "broadcastPosition": "Meine Position senden",
+    "broadcastHint": "Andere Team-Mitglieder sehen Ihren Standort alle 30 Sekunden.",
     "downloadOnly": "Nur auf Anfrage offline",
     "attributionNote": "Ebenen werden beim Aktivieren von den jeweiligen Diensten geladen. Offline-Verfügbarkeit abhängig vom lokalen Cache."
   },
@@ -144,7 +147,26 @@
     "location": "Standort",
     "captureLocation": "GPS-Position aufnehmen",
     "locating": "GPS wird ermittelt…",
-    "submit": "Beobachtung speichern"
+    "submit": "Beobachtung speichern",
+    "autoSuggested": "Auto-Vorschlag"
+  },
+  "assign": {
+    "title": "Aufgabe zuweisen",
+    "button": "Zuweisen",
+    "reassign": "Neu zuweisen",
+    "assignedTo": "Zugewiesen an",
+    "dueAt": "Fällig am (optional)",
+    "busy": "Wird gespeichert…"
+  },
+  "species": {
+    "title": "Baumartenempfehlung",
+    "poweredBy": "LfU Bodendaten",
+    "loading": "Bodendaten werden abgerufen…",
+    "error": "Bodendaten konnten nicht geladen werden.",
+    "noSoil": "Keine Bodendaten für diesen Standort gefunden.",
+    "noMatch": "Keine passenden Arten in der Matrix.",
+    "soil": "Bodenart",
+    "source": "Quelle: {source}"
   },
   "priority": {
     "critical": "Kritisch",
@@ -164,6 +186,7 @@
     "priority": "Priorität",
     "category": "Kategorie",
     "proximity": "Nähe",
+    "mine": "Meine Aufgaben",
     "dateTitle": "Zeitraum",
     "date": {
       "all": "Alle",

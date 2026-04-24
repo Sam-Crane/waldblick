@@ -104,18 +104,44 @@ export const LAYERS: LayerDef[] = [
     attribution: '© LfU — HK100',
     offlineOnDemand: true,
   },
+  // Copernicus Sentinel-2 L2A layers. All share the same edge-function
+  // endpoint; the LAYERS query param differentiates them. The upstream
+  // is sh.dataspace.copernicus.eu/ogc/wms/<INSTANCE_ID>; wms.ts appends
+  // OAuth via the Supabase Edge Function at /copernicus-tile.
+  //
+  // Layer IDs must match what's configured in the Sentinel Hub instance
+  // exactly. Default Sentinel-2 L2A template ships: TRUE-COLOR,
+  // FALSE-COLOR, NDVI, NDMI, NDWI, TRUE-COLOR-HIGHLIGHT-OPTIMIZED.
   {
-    id: 'overlay-copernicus-s2',
+    id: 'overlay-copernicus-true-color',
     kind: 'overlay',
-    titleKey: 'map.layer.copernicusS2',
-    // The actual upstream URL is on sh.dataspace.copernicus.eu; the
-    // client calls the Supabase Edge Function at /copernicus-tile and
-    // the function appends OAuth + forwards. wms.ts resolves the
-    // correct URL at request time.
+    titleKey: 'map.layer.copernicusTrueColor',
     url: '/copernicus-tile',
     type: 'edge-wms',
-    layer: 'TRUE_COLOR',
+    layer: 'TRUE-COLOR',
     attribution: '© Copernicus Data Space — Sentinel-2 L2A',
+    enabledByEnv: 'VITE_USE_COPERNICUS',
+    offlineOnDemand: true,
+  },
+  {
+    id: 'overlay-copernicus-ndvi',
+    kind: 'overlay',
+    titleKey: 'map.layer.copernicusNdvi',
+    url: '/copernicus-tile',
+    type: 'edge-wms',
+    layer: 'NDVI',
+    attribution: '© Copernicus Data Space — Sentinel-2 L2A · NDVI',
+    enabledByEnv: 'VITE_USE_COPERNICUS',
+    offlineOnDemand: true,
+  },
+  {
+    id: 'overlay-copernicus-ndmi',
+    kind: 'overlay',
+    titleKey: 'map.layer.copernicusNdmi',
+    url: '/copernicus-tile',
+    type: 'edge-wms',
+    layer: 'NDMI',
+    attribution: '© Copernicus Data Space — Sentinel-2 L2A · NDMI',
     enabledByEnv: 'VITE_USE_COPERNICUS',
     offlineOnDemand: true,
   },

@@ -142,7 +142,9 @@
       "uebk25": "Bodenkarte 1:25k",
       "buek200": "Bodenübersicht 1:200k",
       "hk100": "Hydrogeologie",
-      "copernicusS2": "Sentinel-2 Satellit"
+      "copernicusTrueColor": "Sentinel-2 (Echtfarbe)",
+      "copernicusNdvi": "Sentinel-2 (NDVI · Vegetationsvitalität)",
+      "copernicusNdmi": "Sentinel-2 (NDMI · Feuchtigkeit)"
     }
   },
   "record": {

@@ -11,7 +11,8 @@ These are the minimum steps between the current repo state and running the [fiel
    - `supabase/migrations/0004_messaging_notifications.sql`
    - `supabase/migrations/0005_discovery_and_profile_autocreate.sql` *(fixes the missing invite code, opens user discovery, fans out "new user joined" notifications)*
    - `supabase/migrations/0006_fix_trigger_security.sql` *(fixes 403 on connection/message inserts — the fanout triggers needed SECURITY DEFINER — plus explicit search_path on every function to satisfy the linter)*
-2. **Seed a forest and memberships** by running `supabase/seeds/demo_forest.sql`. Idempotent; makes every signed-up user a member of *Revier Eichberg* and backfills observations.
+   - `supabase/migrations/0007_tighten_rls.sql` *(closes two cross-user leaks: observations/photos/machines with `forest_id IS NULL` are now author-only, and the tasks table's blanket FOR ALL policy is split into assignee/author-only INSERT/UPDATE/DELETE/SELECT)*
+2. **Seed a forest** by running `supabase/seeds/demo_forest.sql`. Single-owner by default — only the oldest profile becomes a member, so no cross-user visibility. For the multi-user coordination demo (everyone in one forest), also run `supabase/seeds/demo_forest_multi.sql` — deliberate privacy loosening, don't run on a prod project.
 3. **Turn on leaked-password protection** in Supabase Auth → Password Security → enable HaveIBeenPwned. One-click, blocks sign-ups with compromised passwords.
 4. **PWA icons already generated** — `public/icon-192.png`, `icon-512.png`, `icon-512-maskable.png`, plus `apple-touch-icon.png` and `favicon-32.png`. Regenerate any time by editing `public/icon.svg` / `public/icon-maskable.svg` and running `npm run icons`.
 5. **Run the field test checklist** from [playbook.md](playbook.md). Fix any blockers found.

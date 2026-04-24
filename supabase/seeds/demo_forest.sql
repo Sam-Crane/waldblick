@@ -1,17 +1,23 @@
--- Demo seed — creates one forest and adds every existing profile as a
--- member. Safe to run more than once (idempotent).
+-- Demo seed — creates a forest ("Revier Eichberg") owned by the OLDEST
+-- profile and enrols ONLY that profile as a member.
 --
--- Adjust the forest name / boundary as needed before running.
--- After this runs, every new observation an app user captures will
--- attach to this forest, which means the critical-observation fanout
--- notification (in migration 0004) will actually deliver to other members.
+-- This is intentionally single-owner. Observations captured by that user
+-- get backfilled onto the forest so the fanout notifications have a
+-- delivery target. Other users do NOT get access to the forest's data.
+--
+-- To test multi-user coordination (everyone sees everyone's observations),
+-- run `supabase/seeds/demo_forest_multi.sql` after this. That file is a
+-- deliberate privacy loosening — do not run it on a production project
+-- unless you've got real memberships set up instead.
+--
+-- Idempotent; safe to re-run.
 
--- 1. Pick an owner. Defaults to the oldest profile; override by uncommenting.
 do $$
 declare
   owner uuid;
   forest uuid;
 begin
+  -- Override by uncommenting and pasting your user id:
   -- owner := '00000000-0000-0000-0000-000000000000';
   select id into owner from public.profiles order by created_at asc limit 1;
   if owner is null then
@@ -19,27 +25,29 @@ begin
     return;
   end if;
 
-  -- 2. Forest, create if missing.
+  -- Forest, create if missing.
   select id into forest from public.forests where name = 'Revier Eichberg';
   if forest is null then
-    insert into public.forests (name, owner_id) values ('Revier Eichberg', owner) returning id into forest;
+    insert into public.forests (name, owner_id) values ('Revier Eichberg', owner)
+      returning id into forest;
     raise notice 'Created forest % with owner %', forest, owner;
   else
     raise notice 'Forest Revier Eichberg already exists (%)', forest;
   end if;
 
-  -- 3. Membership for every profile. Owner gets role='owner'; everyone else
-  --    gets 'forester' unless they already have a membership (kept as-is).
+  -- Membership — ONLY the owner. Others join by invite / by running the
+  -- separate multi-user seed.
   insert into public.memberships (user_id, forest_id, role)
-  select p.id, forest, case when p.id = owner then 'owner' else coalesce(p.role, 'forester') end
-  from public.profiles p
+  values (owner, forest, 'owner')
   on conflict (user_id, forest_id) do nothing;
 
-  raise notice 'Memberships seeded for all profiles';
-end $$;
+  -- Attach ONLY the owner's existing (null-forest) observations to this
+  -- forest. Observations from other authors are left alone so this seed
+  -- doesn't accidentally pull their data into the forest's membership view.
+  update public.observations
+     set forest_id = forest
+   where forest_id is null
+     and author_id = owner;
 
--- 4. Optional: attach existing observations (that were captured before the
--- forest existed) to this forest so they fan out to members.
-update public.observations
-   set forest_id = (select id from public.forests where name = 'Revier Eichberg' limit 1)
- where forest_id is null;
+  raise notice 'Single-owner seed complete. Owner %, forest %.', owner, forest;
+end $$;

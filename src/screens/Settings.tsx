@@ -5,6 +5,14 @@ import { setLang, useTranslation } from '@/i18n';
 import { db } from '@/data/db';
 import { fullResync } from '@/data/realtimeSync';
 import { notificationsRepo, type NotificationPrefs, ALL_KINDS } from '@/data/notificationsRepo';
+import {
+  exportObservationsCsv,
+  exportObservationsJson,
+  exportTasksCsv,
+  exportFullJson,
+  getWebhookUrl,
+  setWebhookUrl,
+} from '@/data/exportData';
 import { useSession } from '@/data/session';
 import { useToast } from '@/components/Toast';
 import type { NotificationKind } from '@/data/types';
@@ -20,6 +28,8 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
   const [resyncing, setResyncing] = useState(false);
   const [prefs, setPrefs] = useState<NotificationPrefs>({});
+  const [webhook, setWebhook] = useState<string>(() => getWebhookUrl() ?? '');
+  const [exporting, setExporting] = useState<string | null>(null);
 
   useEffect(() => {
     if (isDemoMode) return;
@@ -56,6 +66,31 @@ export default function Settings() {
     } else {
       toast.error(t('settings.resyncFailed'));
     }
+  };
+
+  const doExport = async (
+    kind: 'obs-csv' | 'obs-json' | 'tasks-csv' | 'full-json',
+  ) => {
+    setExporting(kind);
+    try {
+      const count =
+        kind === 'obs-csv'
+          ? await exportObservationsCsv()
+          : kind === 'obs-json'
+            ? await exportObservationsJson()
+            : kind === 'tasks-csv'
+              ? await exportTasksCsv()
+              : (await exportFullJson()).observations;
+      toast.success(t('settings.exported', { n: count }));
+    } catch (err) {
+      toast.error(t('settings.exportFailed', { error: (err as Error).message }));
+    }
+    setExporting(null);
+  };
+
+  const saveWebhook = () => {
+    setWebhookUrl(webhook);
+    toast.success(webhook ? t('settings.webhookSaved') : t('settings.webhookCleared'));
   };
 
   const clearLocal = async () => {
@@ -188,6 +223,57 @@ export default function Settings() {
           </button>
         </Section>
 
+        <Section title={t('settings.export')}>
+          <p className="mb-2 text-label-sm text-outline">{t('settings.exportHint')}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <ExportButton
+              icon="table_chart"
+              label={t('settings.exportObsCsv')}
+              busy={exporting === 'obs-csv'}
+              onClick={() => doExport('obs-csv')}
+            />
+            <ExportButton
+              icon="data_object"
+              label={t('settings.exportObsJson')}
+              busy={exporting === 'obs-json'}
+              onClick={() => doExport('obs-json')}
+            />
+            <ExportButton
+              icon="assignment"
+              label={t('settings.exportTasksCsv')}
+              busy={exporting === 'tasks-csv'}
+              onClick={() => doExport('tasks-csv')}
+            />
+            <ExportButton
+              icon="inventory_2"
+              label={t('settings.exportAllJson')}
+              busy={exporting === 'full-json'}
+              onClick={() => doExport('full-json')}
+            />
+          </div>
+
+          <label className="mt-stack-md flex flex-col gap-stack-sm">
+            <span className="text-label-sm uppercase tracking-widest text-outline">
+              {t('settings.webhook')}
+            </span>
+            <input
+              value={webhook}
+              onChange={(e) => setWebhook(e.target.value)}
+              placeholder="https://your-erp.example/waldblick"
+              className="rounded-md border-b-2 border-outline-variant bg-surface-container-lowest p-3 text-body-md outline-none focus:border-primary-container"
+            />
+            <p className="text-label-sm text-outline">{t('settings.webhookHint')}</p>
+            <button
+              onClick={saveWebhook}
+              className="touch-safe self-start rounded-lg bg-primary px-4 text-on-primary"
+            >
+              <span className="text-label-md font-semibold uppercase tracking-widest">
+                {t('settings.webhookSave')}
+              </span>
+            </button>
+          </label>
+        </Section>
+
         <Section title={t('settings.about')}>
           <Row icon="info" label={t('settings.version')} value="0.0.1" />
           <Row icon="description" label={t('settings.license')} value="Proprietary" />
@@ -215,5 +301,32 @@ function Row({ icon, label, value }: { icon: string; label: string; value: strin
       </div>
       <span className="text-label-sm text-outline">{value}</span>
     </div>
+  );
+}
+
+function ExportButton({
+  icon,
+  label,
+  busy,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  busy: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={busy}
+      className="touch-safe flex flex-col items-center justify-center gap-1 rounded-lg border border-outline-variant bg-surface-container-lowest p-3 active:scale-95 disabled:opacity-60"
+    >
+      <span
+        className={`material-symbols-outlined text-primary-container ${busy ? 'animate-spin' : ''}`}
+      >
+        {busy ? 'sync' : icon}
+      </span>
+      <span className="text-center text-label-sm font-semibold text-on-surface">{label}</span>
+    </button>
   );
 }

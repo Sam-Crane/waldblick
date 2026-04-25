@@ -6,7 +6,7 @@ import { LAYERS, layerById } from './layers';
 import { tilesTemplate } from './wms';
 import { circleRing, rectangleRing, simplifySketch, type LngLat } from './draw';
 import type { DrawTool } from './MapDrawTools';
-import { buildBayernVectorStyle } from './bayernVectorStyle';
+import { fetchBayernVectorStyle } from './bayernVectorStyle';
 
 export type MapCanvasHandle = {
   getBounds: () => maplibregl.LngLatBounds | null;
@@ -338,20 +338,35 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
       // so the reconcile effects below skip until 'style.load' fires,
       // then they all re-run because `ready` flips true again.
       //
-      // The TileJSON URL we have for BayernAtlas (web_vektor_by.json)
-      // is a *data* manifest, not a Mapbox-GL style. So we hand-build
-      // the style at runtime in bayernVectorStyle.ts, with our own
-      // forest-themed rendering rules. If we ever add a different
-      // vector basemap, dispatch on def.id here.
+      // For BayernAtlas we fetch LDBV's official style document
+      // (`by_style_luftbild_overlay`) and rewrite its sprite/glyphs/
+      // source URLs to point at the dev proxy. Async, so we register
+      // the style.load listener up front and call setStyle inside
+      // the .then. Failures fall back to the satellite basemap via
+      // the same onBaseFailed channel raster errors use.
       setReady(false);
-      const styleSpec =
-        def.id === 'base-bayern-vector' ? buildBayernVectorStyle() : def.url;
-      map.setStyle(styleSpec, { diff: false });
       const onStyleLoad = () => {
         setReady(true);
         map.off('style.load', onStyleLoad);
       };
       map.on('style.load', onStyleLoad);
+
+      if (def.id === 'base-bayern-vector') {
+        fetchBayernVectorStyle()
+          .then((spec) => {
+            map.setStyle(spec, { diff: false });
+          })
+          .catch((err) => {
+            console.warn('[map] BayernAtlas style fetch failed:', err);
+            map.off('style.load', onStyleLoad);
+            // Allow retry — without this, the idempotency guard would
+            // keep us locked out of swapping to bayern-vector again.
+            lastAppliedBaseRef.current = null;
+            onBaseFailedRef.current?.(baseLayerId, String(err));
+          });
+      } else {
+        map.setStyle(def.url, { diff: false });
+      }
       return;
     }
 

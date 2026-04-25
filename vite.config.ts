@@ -91,18 +91,13 @@ export default defineConfig({
     // mirrors this proxy. For now we ship dev-only and document the
     // production path in bayernVectorStyle.ts.
     proxy: (() => {
-      // Helper: build identical proxy config for vt1/vt2/vt3 backends.
-      // bayernwolke.de uses some kind of request validation that we
-      // haven't fully mapped — Referer + Origin spoofing alone wasn't
-      // enough. The proxyRes hook below logs the upstream's exact
-      // response (status, headers, first 200 bytes of body) to the Vite
-      // terminal so we can actually see *why* it's rejecting requests
-      // instead of guessing. Once we know, the dev-only spoofing can
-      // be made tighter and ported to the production proxy.
-      const make = (n: 1 | 2 | 3) => ({
-        target: `https://vt${n}.bayernwolke.de`,
+      // Helper: build identical proxy config for each BayernAtlas
+      // backend. Cookie-strip (the actual fix for the persistent 400s)
+      // + Referer/Origin spoof are uniform across all targets.
+      const make = (segment: string, target: string) => ({
+        target,
         changeOrigin: true,
-        rewrite: (p: string) => p.replace(new RegExp(`^/bayern-vt/${n}`), ''),
+        rewrite: (p: string) => p.replace(new RegExp(`^/bayern-vt/${segment}`), ''),
         configure: (proxy: import('http-proxy').Server) => {
           proxy.on('proxyReq', (proxyReq) => {
             // Spoof headers as if request came from atlas.bayern.de.
@@ -137,8 +132,7 @@ export default defineConfig({
                 const body = Buffer.concat(chunks).toString('utf8').slice(0, 400);
                 // eslint-disable-next-line no-console
                 console.warn(
-                  `[bayern-vt/${n}] ${status} ${proxyRes.statusMessage} for ${req.url}\n` +
-                    `  response headers: ${JSON.stringify(proxyRes.headers, null, 2)}\n` +
+                  `[bayern-vt/${segment}] ${status} ${proxyRes.statusMessage} for ${req.url}\n` +
                     `  body (first 400 chars): ${body || '<empty>'}`,
                 );
               });
@@ -146,14 +140,19 @@ export default defineConfig({
           });
           proxy.on('error', (err, req) => {
             // eslint-disable-next-line no-console
-            console.warn(`[bayern-vt/${n}] proxy error for ${req.url}:`, err.message);
+            console.warn(`[bayern-vt/${segment}] proxy error for ${req.url}:`, err.message);
           });
         },
       });
       return {
-        '/bayern-vt/1': make(1),
-        '/bayern-vt/2': make(2),
-        '/bayern-vt/3': make(3),
+        // Tile CDN backends. Same web_vektor_by tiles, three replicas.
+        '/bayern-vt/1': make('1', 'https://vt1.bayernwolke.de'),
+        '/bayern-vt/2': make('2', 'https://vt2.bayernwolke.de'),
+        '/bayern-vt/3': make('3', 'https://vt3.bayernwolke.de'),
+        // Style + TileJSON service. Hosts:
+        //   /vt/styles/by_style_*.json    (Mapbox-GL style documents)
+        //   /vt/tiles/web_vektor_by.json  (TileJSON for the source above)
+        '/bayern-vt/services': make('services', 'https://services.atlas.bayern.de'),
       };
     })(),
   },

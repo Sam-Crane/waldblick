@@ -123,13 +123,22 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   useImperativeHandle(handleRef, () => ({
     getBounds: () => mapRef.current?.getBounds() ?? null,
     fitBounds: (bounds, padding = 60) => {
-      // maxZoom: 17 lets the BayernAtlas Parzellarkarte overlay actually
-      // show parcel lines on first paint. The composite tiles only
-      // include parcel boundaries at zoom ≥ 16; at lower zoom the
-      // overlay just contains place names + roads. So when we auto-fit
-      // to a small plot or single observation, we want the resulting
-      // zoom to be high enough that the user sees their parcel grid.
-      mapRef.current?.fitBounds(bounds, { padding, duration: 600, maxZoom: 17 });
+      const map = mapRef.current;
+      if (!map) return;
+      // Naïve fitBounds picks the largest zoom that contains the bounds.
+      // For data that spans, say, 1km of forest with multiple plots, the
+      // natural fit comes out at zoom 13-14 — too low for the LDBV
+      // composite overlay, whose parcel boundaries only render at zoom
+      // ≥ 16. Trade-off: prefer "user can see parcels" over "user can
+      // see every plot at once". cameraForBounds gives us the natural
+      // camera params; we clamp zoom to 16 (parcel-visible floor) and
+      // 17 (don't over-zoom past usable detail). User can pinch-out to
+      // see all their plots if they want the wider context.
+      const camera = map.cameraForBounds(bounds, { padding });
+      const naturalZoom = camera?.zoom ?? 14;
+      const targetZoom = Math.max(16, Math.min(17, naturalZoom));
+      const center = camera?.center ?? map.getCenter();
+      map.flyTo({ center, zoom: targetZoom, duration: 600 });
     },
     flyTo: (latlng, zoom = 16) => {
       mapRef.current?.flyTo({ center: [latlng.lng, latlng.lat], zoom, duration: 800 });

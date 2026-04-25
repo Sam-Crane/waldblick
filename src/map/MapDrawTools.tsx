@@ -68,43 +68,52 @@ export default function MapDrawTools({
   const finishEnabled = tool === 'polygon' && vertexCount >= 3;
 
   return (
-    <div className="pointer-events-auto flex flex-col items-center gap-2">
-      {/* Main toolbar — tools | divider | colours */}
-      <div className="flex items-center gap-1 rounded-full bg-surface-container-lowest/95 px-1.5 py-1 shadow-lg backdrop-blur-md">
-        {tools.map((id) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onToolChange(tool === id ? 'idle' : id)}
-            aria-pressed={tool === id}
-            aria-label={t(`draw.tool.${id}`)}
-            className={`flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95 ${
-              tool === id
-                ? 'bg-primary text-on-primary'
-                : 'text-on-surface-variant hover:bg-surface-container'
-            }`}
-          >
-            <span className="material-symbols-outlined text-[22px]">{TOOL_ICON[id]}</span>
-          </button>
-        ))}
+    <div className="pointer-events-auto flex flex-col items-start gap-2">
+      {/* Vertical tool palette pinned to the left edge of the map.
+          Tools stack on top, then a horizontal hairline divider, then
+          colour swatches. Narrow footprint (~44px wide) so it doesn't
+          eat into the map's left third even on phone widths. */}
+      <div className="flex flex-col items-center gap-1 rounded-2xl bg-surface-container-lowest/95 px-1 py-1.5 shadow-lg backdrop-blur-md">
+        <div className="flex flex-col items-center gap-1">
+          {tools.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => onToolChange(tool === id ? 'idle' : id)}
+              aria-pressed={tool === id}
+              aria-label={t(`draw.tool.${id}`)}
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 md:h-10 md:w-10 ${
+                tool === id
+                  ? 'bg-primary text-on-primary'
+                  : 'text-on-surface-variant hover:bg-surface-container'
+              }`}
+            >
+              <span className="material-symbols-outlined text-[20px] md:text-[22px]">
+                {TOOL_ICON[id]}
+              </span>
+            </button>
+          ))}
+        </div>
 
-        <span className="mx-1 h-6 w-px bg-outline-variant" aria-hidden />
+        <span className="my-0.5 h-px w-6 bg-outline-variant" aria-hidden />
 
-        {DRAW_COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={() => onColorChange(c)}
-            aria-label={c}
-            aria-pressed={color === c}
-            className={`flex h-9 w-9 items-center justify-center rounded-full transition active:scale-95 ${
-              color === c ? 'ring-2 ring-offset-2 ring-primary' : ''
-            }`}
-            style={{ backgroundColor: c }}
-          >
-            {/* Empty — colour swatch speaks for itself. */}
-          </button>
-        ))}
+        <div className="flex flex-col items-center gap-1">
+          {DRAW_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => onColorChange(c)}
+              aria-label={c}
+              aria-pressed={color === c}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition active:scale-95 md:h-8 md:w-8 ${
+                color === c ? 'ring-2 ring-offset-2 ring-primary' : ''
+              }`}
+              style={{ backgroundColor: c }}
+            >
+              {/* Empty — colour swatch speaks for itself. */}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Hint + Finish/Cancel cluster — only when a tool is active */}

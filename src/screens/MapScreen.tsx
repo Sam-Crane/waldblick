@@ -8,7 +8,6 @@ import LayerPanel from '@/map/LayerPanel';
 import ObservationSheet from '@/map/ObservationSheet';
 import RouteCard from '@/map/RouteCard';
 import MapDrawTools, { DRAW_COLORS, type DrawTool } from '@/map/MapDrawTools';
-import GeoDebugPill from '@/map/GeoDebugPill';
 import DownloadAreaButton from '@/map/DownloadAreaButton';
 import { combinedBounds } from '@/map/bbox';
 import type { LngLat } from '@/map/draw';
@@ -325,9 +324,12 @@ export default function MapScreen() {
             <span className="material-symbols-outlined text-primary-fixed-dim">chevron_right</span>
           </Link>
 
-          {/* Plot drawing toolbar — same slot the priority filter used to
-              occupy (below inventory pill on mobile, centred-top on tablet). */}
-          <div className="pointer-events-none absolute left-4 top-[72px] z-10 md:left-1/2 md:top-4 md:-translate-x-1/2">
+          {/* Plot drawing toolbar — vertical column pinned to the left
+              edge. On mobile we offset top-[72px] so it clears the
+              Inventory Scan pill above it; on tablet+ that pill is
+              hidden, so the toolbar can sit at the same top inset as
+              the layer button on the right. */}
+          <div className="pointer-events-none absolute left-4 top-[72px] z-10 md:top-4">
             <MapDrawTools
               tool={drawTool}
               color={drawColor}
@@ -387,8 +389,6 @@ export default function MapScreen() {
               </form>
             </div>
           )}
-
-          <GeoDebugPill />
 
           <DownloadAreaButton
             getBounds={() => mapRef.current?.getBounds() ?? null}

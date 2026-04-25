@@ -481,6 +481,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
         // Don't request WMS tiles below the layer's minZoom — the server
         // returns blank tiles by design and we'd just waste quota + battery.
         ...(def.minZoom != null ? { minzoom: def.minZoom } : {}),
+        // Cap source maxzoom at whatever the CDN actually serves — past
+        // that, MapLibre overzoom-renders the deepest available tile
+        // instead of issuing requests that 4xx (LDBV's ALKIS composite
+        // tops out at z18; asking for z19+ returns 400).
+        ...(def.maxZoom != null ? { maxzoom: def.maxZoom } : {}),
       });
       map.addLayer({
         id: layerId,
@@ -488,6 +493,10 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
         source: srcId,
         paint: { 'raster-opacity': 0.8 },
         ...(def.minZoom != null ? { minzoom: def.minZoom } : {}),
+        // Note: layer maxzoom is intentionally NOT set here. Layer
+        // maxzoom hides the layer above that zoom; we want the layer
+        // to keep rendering (overzoom-scaled). Only the *source*
+        // maxzoom needs to be capped to stop the network requests.
       });
     }
   }, [activeOverlayIds, ready]);

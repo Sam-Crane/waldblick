@@ -5,7 +5,9 @@ import TopBar from '@/components/Layout/TopBar';
 import PriorityBadge from '@/components/PriorityBadge';
 import FilterChip, { FilterSheet, ToggleRow } from '@/components/FilterChip';
 import { ObservationCardSkeleton } from '@/components/Skeleton';
+import { useToast } from '@/components/Toast';
 import { db } from '@/data/db';
+import { observationRepo } from '@/data/observationRepo';
 import { useCurrentUser } from '@/data/currentUser';
 import type { Category, Priority } from '@/data/types';
 import { useTranslation } from '@/i18n';
@@ -24,9 +26,27 @@ type OpenSheet = 'none' | 'priority' | 'category' | 'date';
 export default function TaskList() {
   const t = useTranslation();
   const me = useCurrentUser();
-  const observationsRaw = useLiveQuery(() => db.observations.toArray(), []);
+  const toast = useToast();
+  // Filter out soft-deleted rows here in the live query so the delete
+  // button effect is visible immediately (Dexie indexed-by deletedAt
+  // would also work, but a JS predicate keeps the call site obvious).
+  const observationsRaw = useLiveQuery(
+    () => db.observations.filter((o) => !o.deletedAt).toArray(),
+    [],
+  );
   const loading = observationsRaw === undefined;
   const observations = observationsRaw ?? [];
+
+  const handleDelete = async (id: string, label: string) => {
+    if (!window.confirm(t('tasks.deleteConfirm', { name: label }))) return;
+    try {
+      await observationRepo.softDelete(id);
+      toast.success(t('tasks.deleted'));
+    } catch (e) {
+      toast.error(t('tasks.deleteFailed'));
+      console.error('softDelete failed', e);
+    }
+  };
   const myTasks = useLiveQuery(
     () => db.tasks.where('assigneeId').equals(me.id).toArray(),
     [me.id],
@@ -141,10 +161,13 @@ export default function TaskList() {
         ) : (
           <ul className="flex flex-col gap-4">
             {results.map((o) => (
-              <li key={o.id}>
+              <li
+                key={o.id}
+                className="relative flex min-h-[120px] items-stretch overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm"
+              >
                 <Link
                   to={`/observations/${o.id}`}
-                  className="relative flex min-h-[120px] items-stretch overflow-hidden rounded-lg border border-outline-variant bg-surface-container-lowest shadow-sm"
+                  className="flex flex-grow items-stretch pr-14"
                 >
                   <div
                     className={`absolute left-0 top-0 bottom-0 w-1 ${
@@ -173,6 +196,18 @@ export default function TaskList() {
                     </div>
                   </div>
                 </Link>
+                {/* Delete button outside the Link — 48px touch target,
+                    sits on the right edge so a glove-hand thumb can hit
+                    it without zooming. Trash icon + confirm prevents
+                    accidental deletes during a swipe. */}
+                <button
+                  type="button"
+                  onClick={() => void handleDelete(o.id, t(`category.${o.category}`))}
+                  aria-label={t('tasks.delete')}
+                  className="absolute right-2 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full text-on-surface-variant hover:bg-surface-container active:scale-95"
+                >
+                  <span className="material-symbols-outlined">delete</span>
+                </button>
               </li>
             ))}
           </ul>

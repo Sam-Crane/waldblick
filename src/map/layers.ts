@@ -30,6 +30,15 @@ export type LayerDef = {
   // z≈14 by design — the panel shows a hint and the MapLibre layer skips
   // tile requests below this threshold so the user isn't burning quota.
   minZoom?: number;
+  // Maximum native zoom the upstream CDN ships tiles for. Past this
+  // level we still want the layer to render (the user may zoom in for
+  // detail), so MapLibre's source `maxzoom` makes it scale the
+  // highest-available tile up rather than 400ing forever on requests
+  // for non-existent z19/z20 tiles. LDBV's intergeo CDN tops out at
+  // z18 for the ALKIS composite — past that the request returns
+  // "Bad Request" because the tile pyramid simply doesn't go that
+  // deep.
+  maxZoom?: number;
   // WMS protocol version. Defaults to 1.3.0. Some legacy German WMS
   // services (LDBV BayernAtlas, LfU) return HTTP 400 against 1.3.0 due
   // to layer-name registration quirks but accept 1.1.1 cleanly. The
@@ -121,6 +130,11 @@ export const LAYERS: LayerDef[] = [
     // it's useful, without confusing users by silently disabling
     // the layer when they're slightly zoomed out.
     minZoom: 14,
+    // LDBV's CDN doesn't ship tiles past z18 for this composite —
+    // requesting z19/z20 returns 400 Bad Request. Cap maxzoom at 18
+    // so MapLibre overzoom-renders (scales the z18 tile up) instead
+    // of hammering the upstream with 4xx for every wheel tick.
+    maxZoom: 18,
   },
   // Copernicus Sentinel-2 L2A layers. All share the same edge-function
   // endpoint; the LAYERS query param differentiates them. The upstream

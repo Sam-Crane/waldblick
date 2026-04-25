@@ -74,7 +74,11 @@ export default function MapScreen() {
   const me = useCurrentUser();
   const toast = useToast();
   const location = useLocation() as { state?: { focusPlotId?: string } };
-  const observations = useLiveQuery(() => db.observations.toArray(), []) ?? [];
+  const observations =
+    useLiveQuery(
+      () => db.observations.filter((o) => !o.deletedAt).toArray(),
+      [],
+    ) ?? [];
 
   const [layerState, setLayerState] = useState<StoredLayerState>(loadLayers);
   const [panelOpen, setPanelOpen] = useState(false);

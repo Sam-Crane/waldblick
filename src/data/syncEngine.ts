@@ -118,16 +118,66 @@ async function upsertObservation(o: Observation): Promise<void> {
   if (error) throw new Error(`observations.upsert: ${error.message}`);
 }
 
+// Upload media via the upload-observation-media Edge Function.
+// We can't go direct to supabase.storage.upload() because storage.objects
+// RLS on this project rejects every INSERT with "new row violates row-level
+// security policy" regardless of policy text (see migrations 0015–0018,
+// then plan C in supabase/functions/upload-observation-media/index.ts).
+// The function uploads as service-role server-side, which bypasses RLS.
+async function uploadViaEdgeFn(args: {
+  bucket: 'observation-audio' | 'observation-photos';
+  observationId: string;
+  path: string;
+  contentType: string;
+  blob: Blob;
+}): Promise<{ path: string }> {
+  if (!supabase) throw new Error('supabase_missing');
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('upload_no_session');
+
+  const form = new FormData();
+  form.append('bucket', args.bucket);
+  form.append('observationId', args.observationId);
+  form.append('path', args.path);
+  form.append('contentType', args.contentType);
+  form.append('file', args.blob);
+
+  const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-observation-media`;
+  const res = await fetch(fnUrl, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`upload_fn ${res.status}: ${detail}`);
+  }
+  return (await res.json()) as { path: string };
+}
+
 async function uploadPhotosFor(observationId: string): Promise<void> {
   if (!supabase) throw new Error('supabase_missing');
   const pending = await db.photos.where('observationId').equals(observationId).toArray();
   for (const photo of pending) {
     if (photo.storagePath) continue; // already uploaded
     const path = `${observationId}/${photo.id}.jpg`;
-    const { error: upErr } = await supabase.storage
-      .from('observation-photos')
-      .upload(path, photo.blob, { cacheControl: '3600', upsert: true, contentType: 'image/jpeg' });
-    if (upErr) throw new Error(`storage.upload: ${upErr.message}`);
+    try {
+      await uploadViaEdgeFn({
+        bucket: 'observation-photos',
+        observationId,
+        path,
+        contentType: 'image/jpeg',
+        blob: photo.blob,
+      });
+    } catch (e) {
+      console.error('[upload-observation-media photo] failed', {
+        path,
+        size: photo.blob.size,
+        err: e,
+      });
+      throw e;
+    }
 
     const { error: rowErr } = await supabase.from('observation_photos').upsert(
       {
@@ -158,14 +208,27 @@ async function uploadAudioFor(observationId: string): Promise<void> {
         ? 'ogg'
         : 'webm';
     const path = `${observationId}/${clip.id}.${ext}`;
-    const { error: upErr } = await supabase.storage
-      .from('observation-audio')
-      .upload(path, clip.blob, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType: clip.mimeType,
+    // Strip codec parameters from the mime type — Chrome's MediaRecorder
+    // hands back `audio/webm;codecs=opus`, the edge function strips this
+    // again on its side too but we keep the call site honest.
+    const cleanMime = clip.mimeType.split(';')[0]?.trim() || 'audio/webm';
+    try {
+      await uploadViaEdgeFn({
+        bucket: 'observation-audio',
+        observationId,
+        path,
+        contentType: cleanMime,
+        blob: clip.blob,
       });
-    if (upErr) throw new Error(`storage.upload(audio): ${upErr.message}`);
+    } catch (e) {
+      console.error('[upload-observation-media audio] failed', {
+        path,
+        contentType: cleanMime,
+        size: clip.blob.size,
+        err: e,
+      });
+      throw e;
+    }
 
     const { error: rowErr } = await supabase.from('observation_audio').upsert(
       {

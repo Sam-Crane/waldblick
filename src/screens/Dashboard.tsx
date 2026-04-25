@@ -7,7 +7,11 @@ import { useTranslation } from '@/i18n';
 
 export default function Dashboard() {
   const t = useTranslation();
-  const observations = useLiveQuery(() => db.observations.toArray(), []) ?? [];
+  const observations =
+    useLiveQuery(
+      () => db.observations.filter((o) => !o.deletedAt).toArray(),
+      [],
+    ) ?? [];
 
   return (
     <div className="flex min-h-full flex-col bg-primary pb-24 text-on-primary">

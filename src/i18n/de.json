@@ -302,7 +302,11 @@
     "clear": "Zurücksetzen",
     "count": "{n} Ergebnisse",
     "empty": "Noch keine Beobachtungen. Tippen Sie auf \u201eAufnehmen\u201c, um die erste zu erfassen.",
-    "noMatch": "Keine Treffer für diesen Filter."
+    "noMatch": "Keine Treffer für diesen Filter.",
+    "delete": "Beobachtung löschen",
+    "deleteConfirm": "Diese Beobachtung ({name}) wirklich löschen? Das kann nicht rückgängig gemacht werden.",
+    "deleted": "Beobachtung gelöscht.",
+    "deleteFailed": "Beobachtung konnte nicht gelöscht werden. Bitte erneut versuchen."
   },
   "details": {
     "title": "Beobachtung",

@@ -7,7 +7,14 @@
 // in memory for the ~10-minute token TTL, and proxies the tile request
 // with the Authorization header attached.
 //
-// Deploy: `supabase functions deploy copernicus-tile`
+// Deploy: `supabase functions deploy copernicus-tile --no-verify-jwt`
+//
+// JWT verification MUST be off — MapLibre fetches tile URLs as plain
+// GETs with no Authorization header, so Supabase's default verify-jwt
+// gate would 401 every tile request before our handler runs. The
+// function is safe as a public endpoint: client_id/secret stay in
+// function secrets, never exposed; the upstream is fixed; GET-only.
+//
 // Secrets (one-time):
 //   supabase secrets set COPERNICUS_CLIENT_ID=...
 //   supabase secrets set COPERNICUS_CLIENT_SECRET=...

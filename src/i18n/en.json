@@ -302,7 +302,11 @@
     "clear": "Clear",
     "count": "{n} results",
     "empty": "No observations yet. Tap Record to capture your first.",
-    "noMatch": "No results for this filter."
+    "noMatch": "No results for this filter.",
+    "delete": "Delete observation",
+    "deleteConfirm": "Delete this observation ({name})? This can't be undone.",
+    "deleted": "Observation deleted.",
+    "deleteFailed": "Could not delete the observation. Try again."
   },
   "details": {
     "title": "Observation Details",

@@ -90,4 +90,28 @@ export const observationRepo = {
   async list() {
     return db.observations.where('deletedAt').equals('').or('deletedAt').equals(undefined as never).toArray();
   },
+
+  // Soft-delete: stamps deletedAt on the local row immediately so live
+  // queries hide it, then queues a sync op the engine will turn into a
+  // remote `update set deleted_at = now()` (see syncEngine.runOp).
+  // Idempotent — calling on an already-deleted observation is a no-op.
+  async softDelete(id: string): Promise<void> {
+    const existing = await db.observations.get(id);
+    if (!existing || existing.deletedAt) return;
+    const now = new Date().toISOString();
+
+    await db.transaction('rw', db.observations, db.syncOps, async () => {
+      await db.observations.update(id, { deletedAt: now, updatedAt: now });
+      await db.syncOps.add({
+        id: uuid(),
+        kind: 'delete',
+        entity: 'observation',
+        payload: { id },
+        createdAt: now,
+        attempts: 0,
+      });
+    });
+
+    void import('./syncEngine').then((m) => m.syncNow());
+  },
 };

@@ -108,9 +108,19 @@ export default defineConfig({
             // Spoof headers as if request came from atlas.bayern.de.
             proxyReq.setHeader('Referer', 'https://atlas.bayern.de/');
             proxyReq.setHeader('Origin', 'https://atlas.bayern.de');
-            // Some CDNs reject requests with a "fetch metadata" header
-            // marking them as cross-site. Strip those — same effect as
-            // a non-browser fetch.
+            // Strip cookies + auth before forwarding upstream. Without
+            // this the browser's localhost cookies (Supabase session,
+            // Vite HMR token, etc.) plus Vite's own dev-server cookies
+            // pile up to >8KB, which trips bayernwolke.de's nginx
+            // default header-buffer limit:
+            //   400 Bad Request — Request Header Or Cookie Too Large
+            // bayernwolke.de doesn't authenticate via cookies anyway;
+            // tile requests should be totally unauth'd.
+            proxyReq.removeHeader('cookie');
+            proxyReq.removeHeader('authorization');
+            // Same idea for fetch metadata headers — some CDNs reject
+            // requests marked as cross-site by the browser. Strip to
+            // make the request look like a server-to-server fetch.
             proxyReq.removeHeader('sec-fetch-site');
             proxyReq.removeHeader('sec-fetch-mode');
             proxyReq.removeHeader('sec-fetch-dest');

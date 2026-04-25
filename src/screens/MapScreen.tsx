@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import TopBar from '@/components/Layout/TopBar';
@@ -7,16 +7,17 @@ import MapCanvas, { type MapCanvasHandle } from '@/map/MapCanvas';
 import LayerPanel from '@/map/LayerPanel';
 import ObservationSheet from '@/map/ObservationSheet';
 import RouteCard from '@/map/RouteCard';
-import MapFilterBar from '@/map/MapFilterBar';
+import MapDrawTools, { DRAW_COLORS, type DrawTool } from '@/map/MapDrawTools';
 import GeoDebugPill from '@/map/GeoDebugPill';
 import DownloadAreaButton from '@/map/DownloadAreaButton';
 import { combinedBounds } from '@/map/bbox';
+import type { LngLat } from '@/map/draw';
 import { useMachines } from '@/data/useMachines';
 import { useCurrentUser } from '@/data/currentUser';
 import { useToast } from '@/components/Toast';
 import { db } from '@/data/db';
 import { plotsRepo } from '@/data/plotsRepo';
-import type { Plot, Priority } from '@/data/types';
+import type { Plot } from '@/data/types';
 import { useTranslation } from '@/i18n';
 import { directionsEnabled, fetchRoute, type Route } from '@/map/directions';
 
@@ -75,10 +76,23 @@ export default function MapScreen() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteState>({ kind: 'idle' });
-  const [priorityFilter, setPriorityFilter] = useState<Set<Priority>>(new Set());
   const [broadcasting, setBroadcasting] = useState(false);
   const [plots, setPlots] = useState<Plot[]>([]);
   const mapRef = useRef<MapCanvasHandle>(null);
+
+  // ---- Plot drawing ----
+  // Drawing UX is in three states:
+  //   1. Tool not picked → toolbar visible, user picks a tool/colour
+  //   2. Tool active, mid-shape → vertices accumulate (polygon) or drag
+  //      gesture is live (rect/circle/sketch); preview rendered on map
+  //   3. Shape committed → naming sheet opens, on submit the plot is
+  //      saved + the toolbar resets to idle
+  const [drawTool, setDrawTool] = useState<DrawTool>('idle');
+  const [drawColor, setDrawColor] = useState<string>(DRAW_COLORS[0]);
+  const [polygonVertices, setPolygonVertices] = useState<LngLat[]>([]);
+  const [pendingShape, setPendingShape] = useState<LngLat[] | null>(null);
+  const [savingName, setSavingName] = useState('');
+  const [savingBusy, setSavingBusy] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -140,19 +154,57 @@ export default function MapScreen() {
         : [...s.activeOverlayIds, id],
     }));
 
-  const togglePriority = (p: Priority) => {
-    const next = new Set(priorityFilter);
-    next.has(p) ? next.delete(p) : next.add(p);
-    setPriorityFilter(next);
+  // Reset polygon vertices whenever the user switches *away* from polygon
+  // mode (e.g. picks rectangle, or hits Cancel) — otherwise the next time
+  // they re-enter polygon mode, the old half-finished shape would still
+  // be there.
+  useEffect(() => {
+    if (drawTool !== 'polygon') setPolygonVertices([]);
+  }, [drawTool]);
+
+  const cancelDrawing = () => {
+    setDrawTool('idle');
+    setPolygonVertices([]);
+    setPendingShape(null);
   };
 
-  const visibleObservations = useMemo(
-    () =>
-      priorityFilter.size === 0
-        ? observations
-        : observations.filter((o) => priorityFilter.has(o.priority)),
-    [observations, priorityFilter],
-  );
+  // Polygon Finish: commit the in-flight vertex array as a pending shape
+  // and open the naming sheet. Drag-based tools commit directly via
+  // onShapeComplete.
+  const finishPolygon = () => {
+    if (polygonVertices.length < 3) return;
+    setPendingShape(polygonVertices);
+    setPolygonVertices([]);
+    setDrawTool('idle');
+  };
+
+  const handleShapeComplete = (ring: LngLat[]) => {
+    setPendingShape(ring);
+    // Drag-based tools auto-leave the tool after commit so the user can
+    // tap a marker / pan / zoom while they're naming. Polygon stays
+    // active until Finish, handled separately above.
+    if (drawTool !== 'polygon') setDrawTool('idle');
+  };
+
+  const savePlot = async () => {
+    if (!pendingShape || !savingName.trim()) return;
+    setSavingBusy(true);
+    const ring = [...pendingShape, pendingShape[0]];
+    const result = await plotsRepo.create({
+      name: savingName.trim(),
+      color: drawColor,
+      boundary: { type: 'Polygon', coordinates: [ring] },
+    });
+    setSavingBusy(false);
+    if (!result.ok) {
+      toast.error(t(`plots.createErr.${result.error}`));
+      return;
+    }
+    toast.success(t('plots.created', { name: result.plot.name }));
+    setPlots((list) => [...list, result.plot]);
+    setPendingShape(null);
+    setSavingName('');
+  };
 
   const onLongPress = (dest: { lat: number; lng: number }) => {
     if (!directionsEnabled) {
@@ -194,7 +246,7 @@ export default function MapScreen() {
         <div className="relative flex-1">
           <MapCanvas
             ref={mapRef}
-            observations={visibleObservations}
+            observations={observations}
             plots={plots}
             machines={machines}
             machineTrails={trails}
@@ -241,6 +293,11 @@ export default function MapScreen() {
               setLayerState((s) => ({ ...s, baseLayerId: 'base-satellite' }));
               toast.show(t('map.basemapFailed'), { tone: 'warning' });
             }}
+            drawTool={drawTool}
+            drawColor={drawColor}
+            polygonVertices={polygonVertices}
+            onPolygonVertexAdded={(v) => setPolygonVertices((vs) => [...vs, v])}
+            onShapeComplete={handleShapeComplete}
           />
 
           {/* Mobile-only: Inventory Scan pill linking to Dashboard */}
@@ -263,10 +320,68 @@ export default function MapScreen() {
             <span className="material-symbols-outlined text-primary-fixed-dim">chevron_right</span>
           </Link>
 
-          {/* Priority filter bar — below the pill on mobile, centered top on tablet+ */}
+          {/* Plot drawing toolbar — same slot the priority filter used to
+              occupy (below inventory pill on mobile, centred-top on tablet). */}
           <div className="pointer-events-none absolute left-4 top-[72px] z-10 md:left-1/2 md:top-4 md:-translate-x-1/2">
-            <MapFilterBar active={priorityFilter} onToggle={togglePriority} />
+            <MapDrawTools
+              tool={drawTool}
+              color={drawColor}
+              onToolChange={setDrawTool}
+              onColorChange={setDrawColor}
+              hasInProgress={drawTool === 'polygon' && polygonVertices.length > 0}
+              vertexCount={polygonVertices.length}
+              onCancel={cancelDrawing}
+              onFinish={finishPolygon}
+            />
           </div>
+
+          {/* Naming sheet — appears once a shape is committed, asks the
+              user for a plot name, then writes through plotsRepo. */}
+          {pendingShape && (
+            <div className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 border-t border-outline-variant bg-surface-container-lowest p-margin-main pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void savePlot();
+                }}
+                className="mx-auto flex max-w-xl flex-col gap-stack-md"
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="h-6 w-6 shrink-0 rounded-full border-2"
+                    style={{ backgroundColor: drawColor + '40', borderColor: drawColor }}
+                    aria-hidden
+                  />
+                  <p className="flex-1 text-label-md font-semibold text-on-surface">
+                    {t('draw.savePrompt', { n: pendingShape.length })}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setPendingShape(null)}
+                    className="text-label-sm font-semibold text-outline underline"
+                  >
+                    {t('draw.cancel')}
+                  </button>
+                </div>
+                <input
+                  required
+                  autoFocus
+                  value={savingName}
+                  onChange={(e) => setSavingName(e.target.value)}
+                  placeholder={t('plots.namePlaceholder')}
+                  className="rounded-md border-b-2 border-outline-variant bg-surface-container-lowest p-3 text-body-md outline-none focus:border-primary-container"
+                />
+                <button
+                  type="submit"
+                  disabled={savingBusy || !savingName.trim()}
+                  className="touch-safe flex w-full items-center justify-center gap-2 rounded-lg bg-safety font-bold uppercase tracking-widest text-white shadow-lg active:scale-95 disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined">save</span>
+                  {savingBusy ? t('plots.saving') : t('plots.save')}
+                </button>
+              </form>
+            </div>
+          )}
 
           <GeoDebugPill />
 

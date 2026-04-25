@@ -12,7 +12,10 @@ export type LayerDef = {
   // 'wms' → url is an OGC WMS endpoint we add GetMap params to
   // 'edge-wms' → url resolves at runtime to a Supabase Edge Function
   //            that proxies the request (OAuth kept server-side)
-  type: 'xyz' | 'wms' | 'edge-wms';
+  // 'vector-style' → url is a Mapbox-GL style JSON document. MapLibre
+  //                  loads it via setStyle() and renders the entire
+  //                  styled vector basemap (e.g. BayernAtlas web_vektor).
+  type: 'xyz' | 'wms' | 'edge-wms' | 'vector-style';
   layer?: string; // WMS layer param (for 'wms' and 'edge-wms')
   attribution: string;
   tileSize?: 256 | 512;
@@ -69,6 +72,19 @@ export const LAYERS: LayerDef[] = [
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     type: 'xyz',
     attribution: 'Tiles © Esri — World Imagery',
+  },
+  {
+    // BayernAtlas official vector basemap. Same style-document the
+    // atlas.bayern.de viewer loads — full Bavarian topo + cadastre +
+    // road network rendered as Mapbox vector tiles. URL was lifted
+    // from BayernAtlas's network tab (services.atlas.bayern.de hosts
+    // the style, vt2.bayernwolke.de hosts the .pbf tiles it points at).
+    id: 'base-bayern-vector',
+    kind: 'base',
+    titleKey: 'map.layer.bayernVector',
+    url: 'https://services.atlas.bayern.de/vt/tiles/web_vektor_by.json',
+    type: 'vector-style',
+    attribution: '© Bayerische Vermessungsverwaltung (LDBV) — BayernAtlas',
   },
   {
     id: 'base-luftbild',

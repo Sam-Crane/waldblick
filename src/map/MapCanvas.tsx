@@ -4,6 +4,8 @@ import type { Machine, MachineKind, Observation, Plot, Priority } from '@/data/t
 import { isStale, type Trails } from '@/data/machinesRepo';
 import { LAYERS, layerById } from './layers';
 import { tilesTemplate } from './wms';
+import { circleRing, rectangleRing, simplifySketch, type LngLat } from './draw';
+import type { DrawTool } from './MapDrawTools';
 
 export type MapCanvasHandle = {
   getBounds: () => maplibregl.LngLatBounds | null;
@@ -36,6 +38,22 @@ type Props = {
   // Fired when the active *basemap* WMS keeps failing. Parent should
   // swap baseLayerId back to a known-good basemap (typically satellite).
   onBaseFailed?: (id: string, reason: string) => void;
+
+  // ---- Plot drawing ----
+  // Active drawing tool. 'idle' disables all draw gestures (the map
+  // behaves normally for pan/zoom/observation taps).
+  drawTool?: DrawTool;
+  // Stroke / fill colour for the in-progress shape.
+  drawColor?: string;
+  // The parent owns the polygon vertices for the polygon mode (so it
+  // can show the running count, drive the Finish button, and undo).
+  // For drag-based modes (rect, circle, sketch), MapCanvas tracks the
+  // gesture internally and emits the final ring via onShapeComplete.
+  polygonVertices?: LngLat[];
+  onPolygonVertexAdded?: (v: LngLat) => void;
+  // Fired with the closed ring (open form — first point != last) when
+  // a drag-based shape commits or the user finishes a polygon.
+  onShapeComplete?: (ring: LngLat[]) => void;
 };
 
 // Threshold of consecutive failures per overlay before we declare it
@@ -93,6 +111,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     initialCenter,
     onOverlayFailed,
     onBaseFailed,
+    drawTool = 'idle',
+    drawColor = '#FF6B00',
+    polygonVertices = [],
+    onPolygonVertexAdded,
+    onShapeComplete,
   },
   handleRef,
 ) {
@@ -137,7 +160,15 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     if (!ref.current || mapRef.current) return;
     const center = initialCenter ? [initialCenter.lng, initialCenter.lat] : DEFAULT_CENTER;
 
-    const base = layerById(baseLayerId) ?? LAYERS.find((l) => l.kind === 'base')!;
+    // Always boot with a raster basemap we know how to template — the
+    // swap effect below picks up vector-style or anything else once
+    // `ready` flips true. Avoids needing tilesTemplate to handle every
+    // layer kind for the very first paint.
+    const requestedBase = layerById(baseLayerId);
+    const base =
+      requestedBase && (requestedBase.type === 'xyz' || requestedBase.type === 'wms')
+        ? requestedBase
+        : LAYERS.find((l) => l.kind === 'base' && (l.type === 'xyz' || l.type === 'wms'))!;
     baseFailsRef.current = { id: base.id, n: 0 };
 
     const map = new maplibregl.Map({
@@ -265,29 +296,79 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Swap basemap on toggle
+  // Swap basemap on toggle. Two paths:
+  //
+  //   - Raster basemap (xyz / wms): swap tiles on the existing
+  //     `${BASE_PREFIX}src` source. Cheap, no style reload, our app
+  //     layers (observations / plots / draw progress) stay alive.
+  //
+  //   - Vector-style basemap (Mapbox-GL JSON style URL): we have to
+  //     call map.setStyle(url), which clears every source + layer on
+  //     the map. We bump `ready` back to false during the load and
+  //     true again on 'style.load' — this re-runs all the reconcile
+  //     effects below, which re-add observations / plots / overlays
+  //     on top of the new style.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
     const def = layerById(baseLayerId);
     if (!def || def.kind !== 'base') return;
-    // Reset failure tracking on swap — give the new basemap a clean budget.
     baseFailsRef.current = { id: baseLayerId, n: 0 };
-    const src = map.getSource(`${BASE_PREFIX}src`) as maplibregl.RasterTileSource | undefined;
-    if (!src) return;
-    // Reset tiles via the private `setTiles` when available; fall back to remove+add.
-    if ('setTiles' in src && typeof (src as unknown as { setTiles: (t: string[]) => void }).setTiles === 'function') {
-      (src as unknown as { setTiles: (t: string[]) => void }).setTiles(tilesTemplate(def));
+
+    if (def.type === 'vector-style') {
+      // setStyle wipes all sources + layers. Mark ourselves not-ready
+      // so the reconcile effects below skip until 'style.load' fires,
+      // then they all re-run because `ready` flips true again.
+      setReady(false);
+      map.setStyle(def.url, { diff: false });
+      const onStyleLoad = () => {
+        setReady(true);
+        map.off('style.load', onStyleLoad);
+      };
+      map.on('style.load', onStyleLoad);
+      return;
+    }
+
+    // Raster path: if the current map style has the BASE_PREFIX source
+    // we own, just swap its tiles. Otherwise (we're switching FROM a
+    // vector-style basemap), we have to add it from scratch.
+    const existing = map.getSource(`${BASE_PREFIX}src`) as maplibregl.RasterTileSource | undefined;
+    if (existing) {
+      if ('setTiles' in existing && typeof (existing as unknown as { setTiles: (t: string[]) => void }).setTiles === 'function') {
+        (existing as unknown as { setTiles: (t: string[]) => void }).setTiles(tilesTemplate(def));
+      } else {
+        map.removeLayer(`${BASE_PREFIX}layer`);
+        map.removeSource(`${BASE_PREFIX}src`);
+        map.addSource(`${BASE_PREFIX}src`, {
+          type: 'raster',
+          tiles: tilesTemplate(def),
+          tileSize: def.tileSize ?? 256,
+          attribution: def.attribution,
+        });
+        map.addLayer({ id: `${BASE_PREFIX}layer`, type: 'raster', source: `${BASE_PREFIX}src` }, undefined);
+      }
     } else {
-      map.removeLayer(`${BASE_PREFIX}layer`);
-      map.removeSource(`${BASE_PREFIX}src`);
-      map.addSource(`${BASE_PREFIX}src`, {
-        type: 'raster',
-        tiles: tilesTemplate(def),
-        tileSize: def.tileSize ?? 256,
-        attribution: def.attribution,
+      // No raster source = we were on a vector style. Switch back to a
+      // minimal raster style and re-add. setStyle resets ready.
+      setReady(false);
+      map.setStyle({
+        version: 8,
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+        sources: {
+          [`${BASE_PREFIX}src`]: {
+            type: 'raster',
+            tiles: tilesTemplate(def),
+            tileSize: def.tileSize ?? 256,
+            attribution: def.attribution,
+          },
+        },
+        layers: [{ id: `${BASE_PREFIX}layer`, type: 'raster', source: `${BASE_PREFIX}src` }],
       });
-      map.addLayer({ id: `${BASE_PREFIX}layer`, type: 'raster', source: `${BASE_PREFIX}src` }, undefined);
+      const onStyleLoad = () => {
+        setReady(true);
+        map.off('style.load', onStyleLoad);
+      };
+      map.on('style.load', onStyleLoad);
     }
   }, [baseLayerId, ready]);
 
@@ -379,6 +460,245 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
       cancel();
     };
   }, [onLongPress, ready]);
+
+  // ---- Plot drawing ----
+  //
+  // Three gesture flavours, all driven off the `drawTool` prop:
+  //
+  //   polygon  — single tap adds a vertex. Parent-owned vertex array;
+  //              we emit via onPolygonVertexAdded so the parent can
+  //              show the running count and drive Undo.
+  //   rect     — pointerdown anchors corner A, pointermove updates a
+  //              live preview, pointerup commits a 4-vertex ring.
+  //   circle   — pointerdown anchors centre, pointermove updates the
+  //              radius, pointerup commits a 32-side approximation.
+  //   sketch   — every pointermove between down and up appends a
+  //              point; on up the path is simplified and committed.
+  //
+  // For all drag-based tools we disable map.dragPan during the gesture
+  // (re-enabled on pointerup or tool-change cleanup) so the map doesn't
+  // pan while the user is drawing.
+  const dragGestureRef = useRef<{ kind: 'rectangle' | 'circle' | 'sketch'; start: LngLat; trail: LngLat[] } | null>(null);
+  const [dragPreview, setDragPreview] = useState<LngLat[] | null>(null);
+
+  // Stable refs to the latest callbacks — the gesture handlers stay
+  // attached for the lifetime of a tool change, but we want them to
+  // read the current `onPolygonVertexAdded` / `onShapeComplete` /
+  // `polygonVertices` without re-binding on every parent state update.
+  const onPolygonVertexAddedRef = useRef(onPolygonVertexAdded);
+  const onShapeCompleteRef = useRef(onShapeComplete);
+  useEffect(() => {
+    onPolygonVertexAddedRef.current = onPolygonVertexAdded;
+    onShapeCompleteRef.current = onShapeComplete;
+  }, [onPolygonVertexAdded, onShapeComplete]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    if (drawTool === 'idle') return;
+
+    // Polygon: tap-to-add. Single click on the map (no drag) appends
+    // a vertex. Click on an existing observation marker is suppressed
+    // by stopPropagation in the marker's click handler, so we don't
+    // accidentally add a vertex when picking a marker.
+    if (drawTool === 'polygon') {
+      const onClick = (e: maplibregl.MapMouseEvent) => {
+        const v: LngLat = [e.lngLat.lng, e.lngLat.lat];
+        onPolygonVertexAddedRef.current?.(v);
+      };
+      map.on('click', onClick);
+      return () => {
+        map.off('click', onClick);
+      };
+    }
+
+    // Drag-based tools share a pointerdown/move/up state machine.
+    const startDrag = (e: maplibregl.MapMouseEvent | maplibregl.MapTouchEvent) => {
+      // Disable map pan for the duration of this gesture — we don't
+      // want the map sliding under the user's finger while they draw.
+      // Re-enabled in endDrag and in the cleanup return below.
+      map.dragPan.disable();
+      const ll: LngLat = [e.lngLat.lng, e.lngLat.lat];
+      dragGestureRef.current = { kind: drawTool, start: ll, trail: [ll] };
+      setDragPreview([ll]);
+    };
+    const moveDrag = (e: maplibregl.MapMouseEvent | maplibregl.MapTouchEvent) => {
+      const g = dragGestureRef.current;
+      if (!g) return;
+      const ll: LngLat = [e.lngLat.lng, e.lngLat.lat];
+      if (g.kind === 'sketch') {
+        g.trail.push(ll);
+        // Live preview: render the in-progress trail. We update on
+        // every move event — the trail is also what becomes the final
+        // ring on commit.
+        setDragPreview([...g.trail]);
+      } else if (g.kind === 'rectangle') {
+        setDragPreview(rectangleRing(g.start, ll));
+      } else if (g.kind === 'circle') {
+        setDragPreview(circleRing(g.start, ll));
+      }
+    };
+    const endDrag = (e: maplibregl.MapMouseEvent | maplibregl.MapTouchEvent) => {
+      const g = dragGestureRef.current;
+      dragGestureRef.current = null;
+      map.dragPan.enable();
+      if (!g) return;
+      const ll: LngLat = [e.lngLat.lng, e.lngLat.lat];
+      let ring: LngLat[] = [];
+      if (g.kind === 'rectangle') {
+        ring = rectangleRing(g.start, ll);
+      } else if (g.kind === 'circle') {
+        ring = circleRing(g.start, ll);
+      } else if (g.kind === 'sketch') {
+        // Last point may not be in trail (touchend without a final move
+        // event); push it just in case, then simplify.
+        if (g.trail[g.trail.length - 1] !== ll) g.trail.push(ll);
+        ring = simplifySketch(g.trail);
+      }
+      setDragPreview(null);
+      // A polygon needs ≥3 distinct vertices to be valid. Anything
+      // smaller is almost certainly a stray tap — drop it silently.
+      if (ring.length >= 3) onShapeCompleteRef.current?.(ring);
+    };
+
+    map.on('mousedown', startDrag);
+    map.on('mousemove', moveDrag);
+    map.on('mouseup', endDrag);
+    map.on('touchstart', startDrag);
+    map.on('touchmove', moveDrag);
+    map.on('touchend', endDrag);
+
+    return () => {
+      map.off('mousedown', startDrag);
+      map.off('mousemove', moveDrag);
+      map.off('mouseup', endDrag);
+      map.off('touchstart', startDrag);
+      map.off('touchmove', moveDrag);
+      map.off('touchend', endDrag);
+      // If the tool changes mid-gesture, make sure pan is re-enabled
+      // and we don't leak a stuck preview.
+      map.dragPan.enable();
+      dragGestureRef.current = null;
+      setDragPreview(null);
+    };
+  }, [drawTool, ready]);
+
+  // Render the in-progress shape on the map. We unify all four tools
+  // here: whatever vertices exist (polygon-from-parent or drag-preview),
+  // draw them as a coloured outline + soft fill + corner dots.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const srcId = 'draw-progress-src';
+    const fillId = 'draw-progress-fill';
+    const lineId = 'draw-progress-line';
+    const dotsSrcId = 'draw-progress-dots-src';
+    const dotsId = 'draw-progress-dots';
+
+    const verts: LngLat[] = drawTool === 'polygon' ? polygonVertices : dragPreview ?? [];
+    const visible = drawTool !== 'idle' && verts.length > 0;
+
+    if (!visible) {
+      if (map.getLayer(dotsId)) map.removeLayer(dotsId);
+      if (map.getSource(dotsSrcId)) map.removeSource(dotsSrcId);
+      if (map.getLayer(lineId)) map.removeLayer(lineId);
+      if (map.getLayer(fillId)) map.removeLayer(fillId);
+      if (map.getSource(srcId)) map.removeSource(srcId);
+      return;
+    }
+
+    // Close the ring visually if we have ≥3 vertices, so the user sees
+    // the shape they're committing. Sketch and rect/circle previews are
+    // already closed by their generators.
+    const closed = verts.length >= 3 ? [...verts, verts[0]] : verts;
+
+    const lineFeature = {
+      type: 'Feature' as const,
+      geometry: { type: 'LineString' as const, coordinates: closed },
+      properties: {},
+    };
+    const fillFeature =
+      verts.length >= 3
+        ? {
+            type: 'Feature' as const,
+            geometry: { type: 'Polygon' as const, coordinates: [closed] },
+            properties: {},
+          }
+        : null;
+    const dotsCollection = {
+      type: 'FeatureCollection' as const,
+      features: verts.map((v, i) => ({
+        type: 'Feature' as const,
+        geometry: { type: 'Point' as const, coordinates: v },
+        properties: { recent: i === verts.length - 1 },
+      })),
+    };
+
+    if (!map.getSource(srcId)) {
+      map.addSource(srcId, { type: 'geojson', data: lineFeature });
+      if (fillFeature) {
+        map.addLayer({
+          id: fillId,
+          type: 'fill',
+          source: srcId,
+          paint: { 'fill-color': drawColor, 'fill-opacity': 0.18 },
+        });
+      }
+      map.addLayer({
+        id: lineId,
+        type: 'line',
+        source: srcId,
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: { 'line-color': drawColor, 'line-width': 3 },
+      });
+    } else {
+      // Updating: swap to fill geometry if we just crossed the
+      // 3-vertex threshold (or back to line-only if undone below it).
+      const data = fillFeature ?? lineFeature;
+      (map.getSource(srcId) as maplibregl.GeoJSONSource).setData(data);
+      if (fillFeature && !map.getLayer(fillId)) {
+        map.addLayer(
+          {
+            id: fillId,
+            type: 'fill',
+            source: srcId,
+            paint: { 'fill-color': drawColor, 'fill-opacity': 0.18 },
+          },
+          map.getLayer(lineId) ? lineId : undefined,
+        );
+      } else if (!fillFeature && map.getLayer(fillId)) {
+        map.removeLayer(fillId);
+      }
+      // Keep paint in sync with the active colour.
+      if (map.getLayer(lineId)) map.setPaintProperty(lineId, 'line-color', drawColor);
+      if (map.getLayer(fillId)) map.setPaintProperty(fillId, 'fill-color', drawColor);
+    }
+
+    // Vertex dots — only meaningful for polygon mode. For drag tools
+    // they'd flicker on every move, so we skip them.
+    if (drawTool === 'polygon') {
+      if (!map.getSource(dotsSrcId)) {
+        map.addSource(dotsSrcId, { type: 'geojson', data: dotsCollection });
+        map.addLayer({
+          id: dotsId,
+          type: 'circle',
+          source: dotsSrcId,
+          paint: {
+            'circle-radius': ['case', ['get', 'recent'], 8, 6],
+            'circle-color': drawColor,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff',
+          },
+        });
+      } else {
+        (map.getSource(dotsSrcId) as maplibregl.GeoJSONSource).setData(dotsCollection);
+        if (map.getLayer(dotsId)) map.setPaintProperty(dotsId, 'circle-color', drawColor);
+      }
+    } else {
+      if (map.getLayer(dotsId)) map.removeLayer(dotsId);
+      if (map.getSource(dotsSrcId)) map.removeSource(dotsSrcId);
+    }
+  }, [drawTool, drawColor, polygonVertices, dragPreview, ready]);
 
   // Route line source+layer reconciliation
   useEffect(() => {

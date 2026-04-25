@@ -100,6 +100,24 @@
     "createFailed": "Could not create group.",
     "demoDisabled": "Not available in demo mode."
   },
+  "draw": {
+    "tool": {
+      "polygon": "Polygon (tap corners)",
+      "rectangle": "Rectangle (drag)",
+      "circle": "Circle (drag from centre)",
+      "sketch": "Free sketch (drag to draw)"
+    },
+    "hint": {
+      "polygonStart": "Tap on the map to drop the first corner.",
+      "polygonContinue": "{n} corners · tap Finish when done",
+      "rectangle": "Drag from one corner to the opposite.",
+      "circle": "Drag from the centre out to set the radius.",
+      "sketch": "Hold and drag to sketch the boundary."
+    },
+    "cancel": "Cancel",
+    "finish": "Finish",
+    "savePrompt": "Polygon ready · {n} corners. Name it to save."
+  },
   "voice": {
     "label": "Voice note",
     "start": "Record voice note",
@@ -198,6 +216,7 @@
     "basemapFailed": "Basemap service didn't respond — switched to satellite.",
     "layer": {
       "satellite": "Satellite",
+      "bayernVector": "BayernAtlas (vector)",
       "luftbild": "Aerial (BayernAtlas)",
       "dtk500": "Topo (BayernAtlas)",
       "dok": "Digital Topo",

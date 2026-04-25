@@ -100,6 +100,24 @@
     "createFailed": "Gruppe konnte nicht erstellt werden.",
     "demoDisabled": "Im Demo-Modus nicht verfügbar."
   },
+  "draw": {
+    "tool": {
+      "polygon": "Polygon (Ecken antippen)",
+      "rectangle": "Rechteck (ziehen)",
+      "circle": "Kreis (vom Mittelpunkt ziehen)",
+      "sketch": "Freihand (ziehen zum Zeichnen)"
+    },
+    "hint": {
+      "polygonStart": "Tippen Sie auf die Karte, um die erste Ecke zu setzen.",
+      "polygonContinue": "{n} Ecken · zum Abschließen Fertig tippen",
+      "rectangle": "Von einer Ecke zur gegenüberliegenden ziehen.",
+      "circle": "Vom Mittelpunkt nach außen ziehen, um den Radius festzulegen.",
+      "sketch": "Halten und ziehen, um die Grenze zu skizzieren."
+    },
+    "cancel": "Abbrechen",
+    "finish": "Fertig",
+    "savePrompt": "Polygon fertig · {n} Ecken. Zum Speichern benennen."
+  },
   "voice": {
     "label": "Sprachnotiz",
     "start": "Sprachnotiz aufnehmen",
@@ -198,6 +216,7 @@
     "basemapFailed": "Basiskarten-Dienst nicht erreichbar — auf Satellit gewechselt.",
     "layer": {
       "satellite": "Satellit",
+      "bayernVector": "BayernAtlas (Vektor)",
       "luftbild": "Luftbild (BayernAtlas)",
       "dtk500": "Topo (BayernAtlas)",
       "dok": "Digitale Topo",

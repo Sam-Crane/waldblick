@@ -120,8 +120,13 @@ export const LAYERS: LayerDef[] = [
     url: BAYERN_PARZELLAR_XYZ,
     type: 'xyz',
     attribution: '© LDBV — ALKIS Parzellarkarte',
-    // Cadastre lines only have meaningful detail at street-level zoom.
-    minZoom: 13,
+    // Parcel boundaries don't appear in the LDBV composite tiles
+    // until z ≥ 16 — at lower zoom they only contain place names +
+    // road labels. We set minZoom 14 (not 16) so the layer panel
+    // shows it as "Visible from zoom 14+" — close enough to where
+    // it's useful, without confusing users by silently disabling
+    // the layer when they're slightly zoomed out.
+    minZoom: 14,
   },
   {
     id: 'overlay-lfu-uebk25',

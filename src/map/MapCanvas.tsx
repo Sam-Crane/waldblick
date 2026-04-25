@@ -123,9 +123,15 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   useImperativeHandle(handleRef, () => ({
     getBounds: () => mapRef.current?.getBounds() ?? null,
     fitBounds: (bounds, padding = 60) => {
-      mapRef.current?.fitBounds(bounds, { padding, duration: 600, maxZoom: 15 });
+      // maxZoom: 17 lets the BayernAtlas Parzellarkarte overlay actually
+      // show parcel lines on first paint. The composite tiles only
+      // include parcel boundaries at zoom ≥ 16; at lower zoom the
+      // overlay just contains place names + roads. So when we auto-fit
+      // to a small plot or single observation, we want the resulting
+      // zoom to be high enough that the user sees their parcel grid.
+      mapRef.current?.fitBounds(bounds, { padding, duration: 600, maxZoom: 17 });
     },
-    flyTo: (latlng, zoom = 14) => {
+    flyTo: (latlng, zoom = 16) => {
       mapRef.current?.flyTo({ center: [latlng.lng, latlng.lat], zoom, duration: 800 });
     },
   }));

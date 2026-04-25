@@ -64,6 +64,22 @@ const LFU_BUEK200 = 'https://www.lfu.bayern.de/gdi/wms/boden/buek200by';
 const LFU_UEBK25 = 'https://www.lfu.bayern.de/gdi/wms/boden/uebk25';
 const LFU_HK100 = 'https://www.lfu.bayern.de/gdi/wms/geologie/hk100';
 
+// INSPIRE Cadastral Parcels overlay. The EU INSPIRE programme defines a
+// harmonised "Cadastral Parcels" theme that every member state must
+// publish. For Germany this is delivered per-state, with the federal
+// BKG (Bundesamt für Kartographie und Geodäsie) acting as a registry.
+//
+// Bayern's INSPIRE-CP WMS endpoint:
+//   https://geodaten.bayern.de/inspire/cp/wms
+// Standard INSPIRE layer name for cadastral parcels: 'CP.CadastralParcel'.
+//
+// Override via VITE_INSPIRE_CP_URL if a different state / federal
+// aggregator works better in your test environment. Auto-disable in
+// MapCanvas catches it if the URL 4xx's.
+const INSPIRE_CP_URL =
+  (import.meta.env.VITE_INSPIRE_CP_URL as string | undefined) ??
+  'https://geodaten.bayern.de/inspire/cp/wms';
+
 export const LAYERS: LayerDef[] = [
   {
     id: 'base-satellite',
@@ -130,6 +146,22 @@ export const LAYERS: LayerDef[] = [
     attribution: '© LDBV — ALKIS Tatsächliche Nutzung',
     minZoom: 12,
     enabledByEnv: 'VITE_BAYERN_TN_XYZ',
+  },
+  {
+    // INSPIRE Cadastral Parcels — harmonised EU-wide cadastre theme.
+    // Standard INSPIRE WMS layer ID is 'CP.CadastralParcel'. WMS 1.1.1
+    // for max compatibility with the older German INSPIRE deployments.
+    // Auto-disabled by MapCanvas if the endpoint returns repeated 4xx;
+    // the user can override the URL with VITE_INSPIRE_CP_URL.
+    id: 'overlay-inspire-cp',
+    kind: 'overlay',
+    titleKey: 'map.layer.inspireCp',
+    url: INSPIRE_CP_URL,
+    type: 'wms',
+    layer: 'CP.CadastralParcel',
+    attribution: 'Cadastral parcels via INSPIRE',
+    minZoom: 12,
+    wmsVersion: '1.1.1',
   },
   {
     id: 'overlay-lfu-uebk25',

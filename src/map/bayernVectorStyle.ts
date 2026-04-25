@@ -154,9 +154,10 @@ export function buildBayernVectorStyle(): StyleSpecification {
       },
 
       // Place labels (Name_Punkt). MapLibre needs `text-font` whose
-      // names match what the glyphs server supplies — we use the
-      // generic "Open Sans Regular" stack from demotiles, which the
-      // free server resolves to its bundled Noto fallback.
+      // names match what the glyphs server actually serves —
+      // demotiles.maplibre.org ships "Noto Sans Regular" only. Using
+      // any other name (e.g. "Open Sans Regular") returns 404 for
+      // every glyph range, which crashes the symbol layer at render.
       {
         id: 'bv-place-labels',
         type: 'symbol',
@@ -165,7 +166,7 @@ export function buildBayernVectorStyle(): StyleSpecification {
         minzoom: 8,
         layout: {
           'text-field': ['coalesce', ['get', 'name'], ['get', 'name_kurz']],
-          'text-font': ['Open Sans Regular'],
+          'text-font': ['Noto Sans Regular'],
           'text-size': ['interpolate', ['linear'], ['zoom'], 8, 10, 14, 14],
           'text-allow-overlap': false,
           'text-letter-spacing': 0.05,

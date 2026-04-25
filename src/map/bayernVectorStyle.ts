@@ -30,12 +30,18 @@ import type { StyleSpecification } from 'maplibre-gl';
 // Detection: import.meta.env.DEV is true under `vite dev`, false
 // in `vite build`. When false the URLs fall back to direct, which
 // will still CORS-fail; that's the signal to wire a prod proxy.
+//
+// IMPORTANT: MapLibre fetches tiles inside a web worker. Web workers
+// don't have a `location` base for resolving relative URLs, so
+// `new Request('/bayern-vt/...')` throws "Failed to construct 'Request'".
+// We have to prepend the current origin so the URL is absolute.
 const DEV = import.meta.env.DEV;
+const ORIGIN = typeof window !== 'undefined' ? window.location.origin : '';
 const TILES = DEV
   ? [
-      '/bayern-vt/1/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
-      '/bayern-vt/2/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
-      '/bayern-vt/3/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
+      `${ORIGIN}/bayern-vt/1/tiles/web_vektor_by/{z}/{x}/{y}.pbf`,
+      `${ORIGIN}/bayern-vt/2/tiles/web_vektor_by/{z}/{x}/{y}.pbf`,
+      `${ORIGIN}/bayern-vt/3/tiles/web_vektor_by/{z}/{x}/{y}.pbf`,
     ]
   : [
       'https://vt1.bayernwolke.de/tiles/web_vektor_by/{z}/{x}/{y}.pbf',

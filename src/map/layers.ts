@@ -38,47 +38,29 @@ export type LayerDef = {
   wmsVersion?: '1.1.1' | '1.3.0';
 };
 
-// BayernAtlas raster tiles. The official atlas.bayern.de viewer uses
-// LDBV's WMTS service for these — but the exact URL pattern (service
-// path + layer ID + tilematrixset name) is *not* documented publicly
-// and varies between LDBV deployments. Verified URLs need to be copied
-// from the BayernAtlas viewer's network tab:
+// BayernAtlas raster tiles. URLs extracted from atlas.bayern.de's
+// network tab — `intergeo{31..40}.bayernwolke.de/betty/<layer>/{z}/{x}/{y}`.
+// The intergeo* hosts are LDBV's public CDN, returning
+//   access-control-allow-origin: *
+// so we can fetch them directly from the browser, no proxy or auth
+// required. Confirmed via curl: PNG (parcel overlay, RGBA transparent)
+// + JPEG (DOP20 aerial photo), both 256x256, status 200, no referer
+// or cookie checks.
 //
-//   1. Open https://atlas.bayern.de/ with the desired layer active
-//   2. Open browser DevTools → Network → filter by "wmts" or "tile"
-//   3. Copy the templated URL (z/y/x or BBOX form) into a VITE_BAYERN_*
-//      env var, then re-enable the layer in availableLayers().
-//
-// Earlier attempts at /od/wmts/{service}/v1/{layer}/webmercator/{z}/{y}/{x}
-// returned HTTP 404 — the path structure is wrong. Until a verified
-// URL is provided we fall back to the Esri satellite basemap (which
-// gives the same imagery, just without the German cadastre overlay).
-const BAYERN_DOP_XYZ = import.meta.env.VITE_BAYERN_DOP_XYZ as string | undefined;
-const BAYERN_DTK_XYZ = import.meta.env.VITE_BAYERN_DTK_XYZ as string | undefined;
-const BAYERN_PARZELLAR_XYZ = import.meta.env.VITE_BAYERN_PARZELLAR_XYZ as string | undefined;
-const BAYERN_TN_XYZ = import.meta.env.VITE_BAYERN_TN_XYZ as string | undefined;
+// MapLibre's {a-zA-Z} pattern doesn't expand integer ranges, so we
+// pick a single replica server (35) — load is light enough that one
+// host handles it. If we ever need round-robin, switch to the array
+// form of `tiles` in the source spec.
+const BAYERN_DOP_XYZ =
+  'https://intergeo35.bayernwolke.de/betty/g_satdop20_komplett/{z}/{x}/{y}';
+const BAYERN_PARZELLAR_XYZ =
+  'https://intergeo35.bayernwolke.de/betty/c_g_atkishybrid_alkisinvers_parzellar/{z}/{x}/{y}';
 
 // LfU (soil + hydro) opendata WMS — works against 1.1.1 with EPSG:3857.
 // Kept as opt-in offline-on-demand overlays.
 const LFU_BUEK200 = 'https://www.lfu.bayern.de/gdi/wms/boden/buek200by';
 const LFU_UEBK25 = 'https://www.lfu.bayern.de/gdi/wms/boden/uebk25';
 const LFU_HK100 = 'https://www.lfu.bayern.de/gdi/wms/geologie/hk100';
-
-// INSPIRE Cadastral Parcels overlay. The EU INSPIRE programme defines a
-// harmonised "Cadastral Parcels" theme that every member state must
-// publish. For Germany this is delivered per-state, with the federal
-// BKG (Bundesamt für Kartographie und Geodäsie) acting as a registry.
-//
-// Bayern's INSPIRE-CP WMS endpoint:
-//   https://geodaten.bayern.de/inspire/cp/wms
-// Standard INSPIRE layer name for cadastral parcels: 'CP.CadastralParcel'.
-//
-// Override via VITE_INSPIRE_CP_URL if a different state / federal
-// aggregator works better in your test environment. Auto-disable in
-// MapCanvas catches it if the URL 4xx's.
-const INSPIRE_CP_URL =
-  (import.meta.env.VITE_INSPIRE_CP_URL as string | undefined) ??
-  'https://geodaten.bayern.de/inspire/cp/wms';
 
 export const LAYERS: LayerDef[] = [
   {
@@ -110,58 +92,36 @@ export const LAYERS: LayerDef[] = [
     attribution: '© Bayerische Vermessungsverwaltung (LDBV) — BayernAtlas',
   },
   {
+    // BayernAtlas DOP20 — high-resolution aerial photography (20cm
+    // pixel) covering all of Bavaria. Same imagery shown when you
+    // toggle "Luftbild" in atlas.bayern.de. Public CDN, sends CORS
+    // headers, fetches direct from the browser without proxy.
     id: 'base-luftbild',
     kind: 'base',
     titleKey: 'map.layer.luftbild',
-    url: BAYERN_DOP_XYZ ?? '',
+    url: BAYERN_DOP_XYZ,
     type: 'xyz',
     attribution: '© Bayerische Vermessungsverwaltung (LDBV) — DOP20',
-    enabledByEnv: 'VITE_BAYERN_DOP_XYZ',
   },
   {
-    id: 'base-dtk500',
-    kind: 'base',
-    titleKey: 'map.layer.dtk500',
-    url: BAYERN_DTK_XYZ ?? '',
-    type: 'xyz',
-    attribution: '© Bayerische Vermessungsverwaltung (LDBV) — DTK',
-    enabledByEnv: 'VITE_BAYERN_DTK_XYZ',
-  },
-  {
+    // BayernAtlas Parzellarkarte — the yellow parcel boundary grid
+    // that's the most visually distinctive feature of atlas.bayern.de's
+    // luftbild_parz preset. Transparent PNG overlay so it composes
+    // cleanly over any aerial basemap (DOP20 or Esri satellite).
+    //
+    // Layer name on LDBV's CDN: c_g_atkishybrid_alkisinvers_parzellar
+    // — this is a composite of ATKIS hybrid + ALKIS inverse +
+    // parcel boundaries. The composite gives us cadastre lines AND
+    // road labels AND building outlines in one tile, all transparent
+    // over the basemap.
     id: 'overlay-alkis-parzellar',
     kind: 'overlay',
     titleKey: 'map.layer.alkisParzellar',
-    url: BAYERN_PARZELLAR_XYZ ?? '',
+    url: BAYERN_PARZELLAR_XYZ,
     type: 'xyz',
     attribution: '© LDBV — ALKIS Parzellarkarte',
+    // Cadastre lines only have meaningful detail at street-level zoom.
     minZoom: 13,
-    enabledByEnv: 'VITE_BAYERN_PARZELLAR_XYZ',
-  },
-  {
-    id: 'overlay-alkis-tn',
-    kind: 'overlay',
-    titleKey: 'map.layer.alkisTn',
-    url: BAYERN_TN_XYZ ?? '',
-    type: 'xyz',
-    attribution: '© LDBV — ALKIS Tatsächliche Nutzung',
-    minZoom: 12,
-    enabledByEnv: 'VITE_BAYERN_TN_XYZ',
-  },
-  {
-    // INSPIRE Cadastral Parcels — harmonised EU-wide cadastre theme.
-    // Standard INSPIRE WMS layer ID is 'CP.CadastralParcel'. WMS 1.1.1
-    // for max compatibility with the older German INSPIRE deployments.
-    // Auto-disabled by MapCanvas if the endpoint returns repeated 4xx;
-    // the user can override the URL with VITE_INSPIRE_CP_URL.
-    id: 'overlay-inspire-cp',
-    kind: 'overlay',
-    titleKey: 'map.layer.inspireCp',
-    url: INSPIRE_CP_URL,
-    type: 'wms',
-    layer: 'CP.CadastralParcel',
-    attribution: 'Cadastral parcels via INSPIRE',
-    minZoom: 12,
-    wmsVersion: '1.1.1',
   },
   {
     id: 'overlay-lfu-uebk25',

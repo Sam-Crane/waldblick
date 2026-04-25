@@ -22,10 +22,13 @@ import { useTranslation } from '@/i18n';
 import { directionsEnabled, fetchRoute, type Route } from '@/map/directions';
 
 // Bumped when defaults change in a way that requires invalidating users'
-// stored layer preferences. v3 dropped the (broken) BayernAtlas WMTS URLs
-// I'd guessed at — anyone whose localStorage still pointed at them would
-// otherwise keep hammering 404 endpoints on every map load.
-const LAYERS_STORAGE_KEY = 'waldblick:map:layers:v3';
+// stored layer preferences. v4 swaps the default basemap from Esri
+// satellite to BayernAtlas DOP20 aerial and pre-enables the
+// Parzellarkarte overlay — both via verified intergeo*.bayernwolke.de
+// URLs we extracted from atlas.bayern.de's network tab. Anyone whose
+// localStorage held a v3-era preference would otherwise miss the new
+// "Luftbild + Parzellen" out-of-the-box view.
+const LAYERS_STORAGE_KEY = 'waldblick:map:layers:v4';
 
 type StoredLayerState = {
   baseLayerId: string;
@@ -36,12 +39,14 @@ type StoredLayerState = {
 };
 
 const DEFAULT_STATE: StoredLayerState = {
-  // Default basemap is Esri World Imagery — works everywhere, no external
-  // configuration needed. BayernAtlas Luftbild + Parzellarkarte are
-  // available as opt-in layers once VITE_BAYERN_*_XYZ env vars are set
-  // (see layers.ts header for the discovery procedure).
-  baseLayerId: 'base-satellite',
-  activeOverlayIds: [],
+  // Default to the BayernAtlas DOP20 aerial photo (high-resolution
+  // 20cm-pixel orthophoto) with the ALKIS Parzellarkarte yellow
+  // boundary overlay pre-enabled. This is the same view atlas.bayern.de
+  // shows as `?l=luftbild_parz` — the natural starting view for a
+  // German forest owner identifying their plots. Falls back to Esri
+  // satellite automatically if the LDBV CDN is unreachable.
+  baseLayerId: 'base-luftbild',
+  activeOverlayIds: ['overlay-alkis-parzellar'],
   showPlots: true,
   showObservations: true,
   showMachines: true,

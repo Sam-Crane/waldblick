@@ -35,24 +35,28 @@ export type LayerDef = {
   wmsVersion?: '1.1.1' | '1.3.0';
 };
 
-// BayernAtlas WMTS XYZ tile URLs. These are the same endpoints the
-// official `atlas.bayern.de` viewer uses under the hood — slippy tiles
-// in EPSG:3857 (WebMercatorQuad), no CRS / version negotiation, no 400
-// errors. Layer names and the path structure follow LDBV's documented
-// open-data WMTS pattern. Confirmed paths:
+// BayernAtlas raster tiles. The official atlas.bayern.de viewer uses
+// LDBV's WMTS service for these — but the exact URL pattern (service
+// path + layer ID + tilematrixset name) is *not* documented publicly
+// and varies between LDBV deployments. Verified URLs need to be copied
+// from the BayernAtlas viewer's network tab:
 //
-//   /od/wmts/{service}/v1/{layer}/webmercator/{z}/{y}/{x}
+//   1. Open https://atlas.bayern.de/ with the desired layer active
+//   2. Open browser DevTools → Network → filter by "wmts" or "tile"
+//   3. Copy the templated URL (z/y/x or BBOX form) into a VITE_BAYERN_*
+//      env var, then re-enable the layer in availableLayers().
 //
-// If a future LDBV redeploy moves these, the layer-failure auto-disable
-// in MapCanvas will catch it and fall back to satellite.
-const BAYERN_DOP_XYZ = 'https://geoservices.bayern.de/od/wmts/dop/v1/by_dop20c/webmercator/{z}/{y}/{x}.png';
-const BAYERN_DTK_XYZ = 'https://geoservices.bayern.de/od/wmts/dtk/v1/by_dtk500/webmercator/{z}/{y}/{x}.png';
-const BAYERN_PARZELLAR_XYZ = 'https://geoservices.bayern.de/od/wmts/parzellarkarte/v1/by_parzellarkarte/webmercator/{z}/{y}/{x}.png';
-const BAYERN_TN_XYZ = 'https://geoservices.bayern.de/od/wmts/tn/v1/by_tn/webmercator/{z}/{y}/{x}.png';
+// Earlier attempts at /od/wmts/{service}/v1/{layer}/webmercator/{z}/{y}/{x}
+// returned HTTP 404 — the path structure is wrong. Until a verified
+// URL is provided we fall back to the Esri satellite basemap (which
+// gives the same imagery, just without the German cadastre overlay).
+const BAYERN_DOP_XYZ = import.meta.env.VITE_BAYERN_DOP_XYZ as string | undefined;
+const BAYERN_DTK_XYZ = import.meta.env.VITE_BAYERN_DTK_XYZ as string | undefined;
+const BAYERN_PARZELLAR_XYZ = import.meta.env.VITE_BAYERN_PARZELLAR_XYZ as string | undefined;
+const BAYERN_TN_XYZ = import.meta.env.VITE_BAYERN_TN_XYZ as string | undefined;
 
-// Legacy WMS endpoints — kept as fallbacks but not wired to the UI by
-// default since they've been returning HTTP 400 for layer registrations
-// inconsistent with current LDBV deployment.
+// LfU (soil + hydro) opendata WMS — works against 1.1.1 with EPSG:3857.
+// Kept as opt-in offline-on-demand overlays.
 const LFU_BUEK200 = 'https://www.lfu.bayern.de/gdi/wms/boden/buek200by';
 const LFU_UEBK25 = 'https://www.lfu.bayern.de/gdi/wms/boden/uebk25';
 const LFU_HK100 = 'https://www.lfu.bayern.de/gdi/wms/geologie/hk100';
@@ -70,36 +74,39 @@ export const LAYERS: LayerDef[] = [
     id: 'base-luftbild',
     kind: 'base',
     titleKey: 'map.layer.luftbild',
-    url: BAYERN_DOP_XYZ,
+    url: BAYERN_DOP_XYZ ?? '',
     type: 'xyz',
     attribution: '© Bayerische Vermessungsverwaltung (LDBV) — DOP20',
+    enabledByEnv: 'VITE_BAYERN_DOP_XYZ',
   },
   {
     id: 'base-dtk500',
     kind: 'base',
     titleKey: 'map.layer.dtk500',
-    url: BAYERN_DTK_XYZ,
+    url: BAYERN_DTK_XYZ ?? '',
     type: 'xyz',
     attribution: '© Bayerische Vermessungsverwaltung (LDBV) — DTK',
+    enabledByEnv: 'VITE_BAYERN_DTK_XYZ',
   },
   {
     id: 'overlay-alkis-parzellar',
     kind: 'overlay',
     titleKey: 'map.layer.alkisParzellar',
-    url: BAYERN_PARZELLAR_XYZ,
+    url: BAYERN_PARZELLAR_XYZ ?? '',
     type: 'xyz',
     attribution: '© LDBV — ALKIS Parzellarkarte',
-    // Cadastre lines only render at high zoom on the LDBV WMTS.
     minZoom: 13,
+    enabledByEnv: 'VITE_BAYERN_PARZELLAR_XYZ',
   },
   {
     id: 'overlay-alkis-tn',
     kind: 'overlay',
     titleKey: 'map.layer.alkisTn',
-    url: BAYERN_TN_XYZ,
+    url: BAYERN_TN_XYZ ?? '',
     type: 'xyz',
     attribution: '© LDBV — ALKIS Tatsächliche Nutzung',
     minZoom: 12,
+    enabledByEnv: 'VITE_BAYERN_TN_XYZ',
   },
   {
     id: 'overlay-lfu-uebk25',
@@ -175,10 +182,17 @@ export const LAYERS: LayerDef[] = [
 ];
 
 // Convenience: filter LAYERS for ones that should be offered in the UI.
-// Respects the `enabledByEnv` guard so edge-proxied layers only appear
-// when their server-side piece is deployed and the flag is flipped.
+// Respects the `enabledByEnv` guard so layers gated on a feature flag
+// (Copernicus '1' switch) or a URL-bearing env var only appear when the
+// user has actually configured them.
 export function availableLayers(): LayerDef[] {
-  return LAYERS.filter((l) => !l.enabledByEnv || import.meta.env[l.enabledByEnv] === '1');
+  return LAYERS.filter((l) => {
+    if (!l.enabledByEnv) return true;
+    const v = import.meta.env[l.enabledByEnv];
+    if (typeof v !== 'string') return false;
+    // Accept '1' (boolean-style flags) or any non-empty URL-shaped value.
+    return v === '1' || v.length > 0;
+  });
 }
 
 export function layerById(id: string): LayerDef | undefined {

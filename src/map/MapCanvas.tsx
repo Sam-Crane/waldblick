@@ -6,6 +6,7 @@ import { LAYERS, layerById } from './layers';
 import { tilesTemplate } from './wms';
 import { circleRing, rectangleRing, simplifySketch, type LngLat } from './draw';
 import type { DrawTool } from './MapDrawTools';
+import { buildBayernVectorStyle } from './bayernVectorStyle';
 
 export type MapCanvasHandle = {
   getBounds: () => maplibregl.LngLatBounds | null;
@@ -319,8 +320,16 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
       // setStyle wipes all sources + layers. Mark ourselves not-ready
       // so the reconcile effects below skip until 'style.load' fires,
       // then they all re-run because `ready` flips true again.
+      //
+      // The TileJSON URL we have for BayernAtlas (web_vektor_by.json)
+      // is a *data* manifest, not a Mapbox-GL style. So we hand-build
+      // the style at runtime in bayernVectorStyle.ts, with our own
+      // forest-themed rendering rules. If we ever add a different
+      // vector basemap, dispatch on def.id here.
       setReady(false);
-      map.setStyle(def.url, { diff: false });
+      const styleSpec =
+        def.id === 'base-bayern-vector' ? buildBayernVectorStyle() : def.url;
+      map.setStyle(styleSpec, { diff: false });
       const onStyleLoad = () => {
         setReady(true);
         map.off('style.load', onStyleLoad);

@@ -74,11 +74,18 @@ export const LAYERS: LayerDef[] = [
     attribution: 'Tiles © Esri — World Imagery',
   },
   {
-    // BayernAtlas official vector basemap. Same style-document the
-    // atlas.bayern.de viewer loads — full Bavarian topo + cadastre +
-    // road network rendered as Mapbox vector tiles. URL was lifted
-    // from BayernAtlas's network tab (services.atlas.bayern.de hosts
-    // the style, vt2.bayernwolke.de hosts the .pbf tiles it points at).
+    // BayernAtlas vector basemap. Backed by LDBV's `web_vektor_by`
+    // tile set (Bavarian topographic data: roads, water, vegetation,
+    // buildings, place names). The forest-themed rendering rules
+    // live in bayernVectorStyle.ts — MapCanvas detects this layer's
+    // id at swap time and uses the hand-built style spec instead of
+    // fetching `url` (which is just the data-manifest TileJSON).
+    //
+    // NB: this basemap does NOT include parcel boundaries
+    // (Parzellarkarte / Flurstücke). Those live in a separate LDBV
+    // vector tile service whose URL we don't have yet — the user
+    // would need to enable the cadastre overlay in BayernAtlas's
+    // network tab and copy a tile URL from there.
     id: 'base-bayern-vector',
     kind: 'base',
     titleKey: 'map.layer.bayernVector',

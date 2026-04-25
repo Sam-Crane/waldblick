@@ -220,6 +220,13 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
       attributionControl: { compact: true },
     });
 
+    // Dev-only: expose the live map instance on window so we can poke
+    // at it from the console (`__map.getZoom()`, `__map.getStyle()`,
+    // etc.). Stripped from production builds via the env guard.
+    if (import.meta.env.DEV) {
+      (window as unknown as { __map: maplibregl.Map }).__map = map;
+    }
+
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right');
     const geolocate = new maplibregl.GeolocateControl({
       // Explicit timeout + maximumAge so the control can't hang indefinitely.

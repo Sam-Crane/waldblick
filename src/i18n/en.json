@@ -194,9 +194,12 @@
     "placeholder": "Map loads in Phase 2 (MapLibre + BayernAtlas + LfU).",
     "inventoryScan": "Inventory Scan",
     "inventoryCounts": "{total} observations · {critical} critical",
+    "layerFailed": "That layer's service didn't respond — turned it off.",
+    "basemapFailed": "Basemap service didn't respond — switched to satellite.",
     "layer": {
       "satellite": "Satellite",
-      "dtk500": "Topo 1:500k",
+      "luftbild": "Aerial (BayernAtlas)",
+      "dtk500": "Topo (BayernAtlas)",
       "dok": "Digital Topo",
       "alkisParzellar": "Parcel Map",
       "alkisTn": "Land Use (ALKIS)",

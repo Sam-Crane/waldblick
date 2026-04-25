@@ -31,7 +31,12 @@ type StoredLayerState = {
 };
 
 const DEFAULT_STATE: StoredLayerState = {
-  baseLayerId: 'base-satellite',
+  // Default to BayernAtlas Luftbild (DOP20) — same imagery as the official
+  // atlas.bayern.de viewer — with the Parzellarkarte cadastre overlay
+  // pre-enabled. This reproduces the "Luftbild + Parzellen" preset that's
+  // the natural starting view for a German forest owner. Falls back to
+  // Esri satellite automatically if the LDBV WMTS is unreachable.
+  baseLayerId: 'base-luftbild',
   activeOverlayIds: ['overlay-alkis-parzellar'],
   showPlots: true,
   showObservations: true,
@@ -215,6 +220,24 @@ export default function MapScreen() {
               if (accuracy > 500) toast.show(t('geolocate.lowAccuracy', { m: Math.round(accuracy) }), { tone: 'warning' });
             }}
             routeCoords={route.kind === 'ready' ? route.route.coordinates : undefined}
+            onOverlayFailed={(id) => {
+              // The overlay's WMS endpoint returned repeated 4xx — drop it
+              // from the active set so MapLibre stops hammering it, and
+              // tell the user why their parcel grid disappeared.
+              setLayerState((s) => ({
+                ...s,
+                activeOverlayIds: s.activeOverlayIds.filter((x) => x !== id),
+              }));
+              toast.show(t('map.layerFailed'), { tone: 'warning' });
+            }}
+            onBaseFailed={(id) => {
+              // Active basemap WMS is broken — fall back to the satellite
+              // layer (always available, no licensing). Don't loop if the
+              // user is *already* on satellite.
+              if (id === 'base-satellite') return;
+              setLayerState((s) => ({ ...s, baseLayerId: 'base-satellite' }));
+              toast.show(t('map.basemapFailed'), { tone: 'warning' });
+            }}
           />
 
           {/* Mobile-only: Inventory Scan pill linking to Dashboard */}

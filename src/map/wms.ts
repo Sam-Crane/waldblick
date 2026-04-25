@@ -11,18 +11,25 @@ export function tilesTemplate(def: LayerDef): string[] {
   if (def.type === 'xyz') return [def.url];
 
   const size = def.tileSize ?? 256;
-  const params = new URLSearchParams({
+  const version = def.wmsVersion ?? '1.3.0';
+  // WMS uses different parameter names for the spatial reference between
+  // versions: 1.1.1 → SRS, 1.3.0 → CRS. The axis-order semantics for
+  // EPSG:3857 are east,north in both versions, so the {bbox-epsg-3857}
+  // template works unchanged.
+  const baseParams: Record<string, string> = {
     SERVICE: 'WMS',
-    VERSION: '1.3.0',
+    VERSION: version,
     REQUEST: 'GetMap',
     LAYERS: def.layer ?? '',
     STYLES: '',
     FORMAT: 'image/png',
     TRANSPARENT: 'true',
-    CRS: 'EPSG:3857',
     WIDTH: String(size),
     HEIGHT: String(size),
-  });
+  };
+  if (version === '1.1.1') baseParams.SRS = 'EPSG:3857';
+  else baseParams.CRS = 'EPSG:3857';
+  const params = new URLSearchParams(baseParams);
 
   const baseUrl = def.type === 'edge-wms' ? resolveEdgeUrl(def.url) : def.url;
   const sep = baseUrl.includes('?') ? '&' : '?';

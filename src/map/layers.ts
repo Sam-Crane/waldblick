@@ -27,12 +27,32 @@ export type LayerDef = {
   // z≈14 by design — the panel shows a hint and the MapLibre layer skips
   // tile requests below this threshold so the user isn't burning quota.
   minZoom?: number;
+  // WMS protocol version. Defaults to 1.3.0. Some legacy German WMS
+  // services (LDBV BayernAtlas, LfU) return HTTP 400 against 1.3.0 due
+  // to layer-name registration quirks but accept 1.1.1 cleanly. The
+  // axis-order semantics for EPSG:3857 are identical between versions
+  // (east,north) so switching is a clean fallback.
+  wmsVersion?: '1.1.1' | '1.3.0';
 };
 
-const BAYERN_DTK500 = 'https://geoservices.bayern.de/od/wms/dtk/v1/dtk500';
-const BAYERN_DOK = 'https://geoservices.bayern.de/od/wms/dtk/v1/dok';
-const BAYERN_ALKIS_PARZELLAR = 'https://geoservices.bayern.de/od/wms/alkis/v1/parzellarkarte';
-const BAYERN_ALKIS_TN = 'https://geoservices.bayern.de/od/wms/alkis/v1/tn';
+// BayernAtlas WMTS XYZ tile URLs. These are the same endpoints the
+// official `atlas.bayern.de` viewer uses under the hood — slippy tiles
+// in EPSG:3857 (WebMercatorQuad), no CRS / version negotiation, no 400
+// errors. Layer names and the path structure follow LDBV's documented
+// open-data WMTS pattern. Confirmed paths:
+//
+//   /od/wmts/{service}/v1/{layer}/webmercator/{z}/{y}/{x}
+//
+// If a future LDBV redeploy moves these, the layer-failure auto-disable
+// in MapCanvas will catch it and fall back to satellite.
+const BAYERN_DOP_XYZ = 'https://geoservices.bayern.de/od/wmts/dop/v1/by_dop20c/webmercator/{z}/{y}/{x}.png';
+const BAYERN_DTK_XYZ = 'https://geoservices.bayern.de/od/wmts/dtk/v1/by_dtk500/webmercator/{z}/{y}/{x}.png';
+const BAYERN_PARZELLAR_XYZ = 'https://geoservices.bayern.de/od/wmts/parzellarkarte/v1/by_parzellarkarte/webmercator/{z}/{y}/{x}.png';
+const BAYERN_TN_XYZ = 'https://geoservices.bayern.de/od/wmts/tn/v1/by_tn/webmercator/{z}/{y}/{x}.png';
+
+// Legacy WMS endpoints — kept as fallbacks but not wired to the UI by
+// default since they've been returning HTTP 400 for layer registrations
+// inconsistent with current LDBV deployment.
 const LFU_BUEK200 = 'https://www.lfu.bayern.de/gdi/wms/boden/buek200by';
 const LFU_UEBK25 = 'https://www.lfu.bayern.de/gdi/wms/boden/uebk25';
 const LFU_HK100 = 'https://www.lfu.bayern.de/gdi/wms/geologie/hk100';
@@ -47,41 +67,37 @@ export const LAYERS: LayerDef[] = [
     attribution: 'Tiles © Esri — World Imagery',
   },
   {
+    id: 'base-luftbild',
+    kind: 'base',
+    titleKey: 'map.layer.luftbild',
+    url: BAYERN_DOP_XYZ,
+    type: 'xyz',
+    attribution: '© Bayerische Vermessungsverwaltung (LDBV) — DOP20',
+  },
+  {
     id: 'base-dtk500',
     kind: 'base',
     titleKey: 'map.layer.dtk500',
-    url: BAYERN_DTK500,
-    type: 'wms',
-    layer: 'by_dtk500',
-    attribution: '© Bayerische Vermessungsverwaltung (LDBV)',
-  },
-  {
-    id: 'base-dok',
-    kind: 'base',
-    titleKey: 'map.layer.dok',
-    url: BAYERN_DOK,
-    type: 'wms',
-    layer: 'by_dok',
-    attribution: '© Bayerische Vermessungsverwaltung (LDBV)',
+    url: BAYERN_DTK_XYZ,
+    type: 'xyz',
+    attribution: '© Bayerische Vermessungsverwaltung (LDBV) — DTK',
   },
   {
     id: 'overlay-alkis-parzellar',
     kind: 'overlay',
     titleKey: 'map.layer.alkisParzellar',
-    url: BAYERN_ALKIS_PARZELLAR,
-    type: 'wms',
-    layer: 'by_parzellarkarte',
+    url: BAYERN_PARZELLAR_XYZ,
+    type: 'xyz',
     attribution: '© LDBV — ALKIS Parzellarkarte',
-    // Cadastre lines only render at street-level zoom on the LDBV WMS.
+    // Cadastre lines only render at high zoom on the LDBV WMTS.
     minZoom: 13,
   },
   {
     id: 'overlay-alkis-tn',
     kind: 'overlay',
     titleKey: 'map.layer.alkisTn',
-    url: BAYERN_ALKIS_TN,
-    type: 'wms',
-    layer: 'by_tn',
+    url: BAYERN_TN_XYZ,
+    type: 'xyz',
     attribution: '© LDBV — ALKIS Tatsächliche Nutzung',
     minZoom: 12,
   },
@@ -93,6 +109,7 @@ export const LAYERS: LayerDef[] = [
     type: 'wms',
     attribution: '© Bayerisches Landesamt für Umwelt (LfU)',
     offlineOnDemand: true,
+    wmsVersion: '1.1.1',
   },
   {
     id: 'overlay-lfu-buek200',
@@ -102,6 +119,7 @@ export const LAYERS: LayerDef[] = [
     type: 'wms',
     attribution: '© LfU — BÜK200',
     offlineOnDemand: true,
+    wmsVersion: '1.1.1',
   },
   {
     id: 'overlay-lfu-hk100',
@@ -111,6 +129,7 @@ export const LAYERS: LayerDef[] = [
     type: 'wms',
     attribution: '© LfU — HK100',
     offlineOnDemand: true,
+    wmsVersion: '1.1.1',
   },
   // Copernicus Sentinel-2 L2A layers. All share the same edge-function
   // endpoint; the LAYERS query param differentiates them. The upstream

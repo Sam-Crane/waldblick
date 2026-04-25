@@ -194,9 +194,12 @@
     "placeholder": "Karte wird in Phase 2 geladen (MapLibre + BayernAtlas + LfU).",
     "inventoryScan": "Bestandsübersicht",
     "inventoryCounts": "{total} Beobachtungen · {critical} kritisch",
+    "layerFailed": "Der Dienst für diese Ebene hat nicht geantwortet — abgeschaltet.",
+    "basemapFailed": "Basiskarten-Dienst nicht erreichbar — auf Satellit gewechselt.",
     "layer": {
       "satellite": "Satellit",
-      "dtk500": "Topo 1:500k",
+      "luftbild": "Luftbild (BayernAtlas)",
+      "dtk500": "Topo (BayernAtlas)",
       "dok": "Digitale Topo",
       "alkisParzellar": "Parzellarkarte",
       "alkisTn": "Nutzung (ALKIS)",

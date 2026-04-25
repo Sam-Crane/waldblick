@@ -27,7 +27,22 @@ type Props = {
   onGeolocateSuccess?: (accuracy: number) => void;
   routeCoords?: [number, number][]; // [lng, lat][]
   initialCenter?: { lat: number; lng: number };
+  // Fired when an overlay's WMS endpoint returns repeated 4xx errors
+  // (typical signal that the layer name / CRS / version is wrong on the
+  // server). The parent should drop the overlay from `activeOverlayIds`
+  // and surface a toast — leaving it active just makes MapLibre retry
+  // the broken endpoint on every pan/zoom forever.
+  onOverlayFailed?: (id: string, reason: string) => void;
+  // Fired when the active *basemap* WMS keeps failing. Parent should
+  // swap baseLayerId back to a known-good basemap (typically satellite).
+  onBaseFailed?: (id: string, reason: string) => void;
 };
+
+// Threshold of consecutive failures per overlay before we declare it
+// broken and notify the parent to disable it. Picked high enough that a
+// single transient timeout doesn't kill the layer, low enough that a
+// genuinely-broken endpoint doesn't spam the console for long.
+const OVERLAY_FAIL_THRESHOLD = 4;
 
 const MACHINE_ICON: Record<MachineKind, string> = {
   harvester: 'construction',
@@ -76,6 +91,8 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     onGeolocateSuccess,
     routeCoords,
     initialCenter,
+    onOverlayFailed,
+    onBaseFailed,
   },
   handleRef,
 ) {
@@ -93,6 +110,27 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   const markersRef = useRef<Marker[]>([]);
   const machineMarkersRef = useRef<Marker[]>([]);
   const [ready, setReady] = useState(false);
+  // Per-overlay consecutive failure counts. Reset when the overlay is
+  // re-enabled or removed. Lives in a ref because we don't want the
+  // counter to trigger re-renders.
+  // Use the global Map constructor explicitly — the file's `Map` import
+  // from maplibre-gl shadows the built-in.
+  const overlayFailsRef = useRef<globalThis.Map<string, number>>(new globalThis.Map());
+  // Set of overlay ids we've already given up on. Prevents repeated
+  // onOverlayFailed callbacks for the same dead endpoint.
+  const overlayDeadRef = useRef<Set<string>>(new Set());
+  // Same tracking for the active basemap.
+  const baseFailsRef = useRef<{ id: string | null; n: number }>({ id: null, n: 0 });
+  const baseDeadRef = useRef<Set<string>>(new Set());
+  // Latest callback refs so the long-lived MapLibre `error` listener
+  // (set up once at init) reads current values rather than stale closure
+  // captures.
+  const onOverlayFailedRef = useRef(onOverlayFailed);
+  const onBaseFailedRef = useRef(onBaseFailed);
+  useEffect(() => {
+    onOverlayFailedRef.current = onOverlayFailed;
+    onBaseFailedRef.current = onBaseFailed;
+  }, [onOverlayFailed, onBaseFailed]);
 
   // Init once
   useEffect(() => {
@@ -100,6 +138,7 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     const center = initialCenter ? [initialCenter.lng, initialCenter.lat] : DEFAULT_CENTER;
 
     const base = layerById(baseLayerId) ?? LAYERS.find((l) => l.kind === 'base')!;
+    baseFailsRef.current = { id: base.id, n: 0 };
 
     const map = new maplibregl.Map({
       container: ref.current,
@@ -156,12 +195,64 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
       setReady(true);
     });
 
-    // Downgrade WMS tile-decode errors (empty / HTML responses for tiles
-    // outside a WMS's coverage area) from noisy uncaught rejections to
-    // quiet warnings. Other errors still surface for debugging.
+    // Map errors come in three flavours we want to handle differently:
+    //
+    //   1. Tile decode / abort errors → silent (normal during pan/zoom).
+    //   2. AJAXError 4xx for a specific overlay source → count failures
+    //      per overlay; after OVERLAY_FAIL_THRESHOLD, fire onOverlayFailed
+    //      so the parent can disable the layer. Logs the *first* failure
+    //      per overlay only — MapLibre re-fetches tiles aggressively and
+    //      otherwise floods the console with hundreds of identical 400s.
+    //   3. Anything else → warn once.
     map.on('error', (e) => {
-      const msg = e.error?.message ?? '';
+      const errAny = e.error as unknown as { status?: number; message?: string } | undefined;
+      const msg = errAny?.message ?? '';
       if (msg.includes('could not be decoded') || msg.includes('AbortError')) return;
+
+      // Identify the offending overlay by matching the error's source against
+      // the OVERLAY_PREFIX-prefixed sources we manage. The MapLibre event
+      // includes a `sourceId` on the source-data error variants.
+      const sourceId =
+        (e as unknown as { sourceId?: string }).sourceId ??
+        // AJAXError carries a url; we can map it back via the source's
+        // tile template, but we already prefix layer ids in the source id
+        // so the sourceId field is the cheap path.
+        '';
+      const overlayPrefix = `${OVERLAY_PREFIX}src-`;
+      const isHttp4xx = /4\d\d|status code 4\d\d|Bad Request|Not Found/i.test(msg);
+
+      if (sourceId.startsWith(overlayPrefix) && isHttp4xx) {
+        const overlayId = sourceId.slice(overlayPrefix.length);
+        if (overlayDeadRef.current.has(overlayId)) return; // already given up
+        const next = (overlayFailsRef.current.get(overlayId) ?? 0) + 1;
+        overlayFailsRef.current.set(overlayId, next);
+        if (next === 1) {
+          // First failure: log once with full detail so it's debuggable
+          // without being a console flood.
+          console.warn('[map]', `overlay ${overlayId} failed:`, msg);
+        }
+        if (next >= OVERLAY_FAIL_THRESHOLD) {
+          overlayDeadRef.current.add(overlayId);
+          onOverlayFailedRef.current?.(overlayId, msg);
+        }
+        return;
+      }
+
+      // Base layer failure → ask parent to fall back. Same dedupe rules.
+      if (sourceId === `${BASE_PREFIX}src` && isHttp4xx) {
+        const baseId = baseFailsRef.current.id ?? '<unknown>';
+        if (baseDeadRef.current.has(baseId)) return;
+        baseFailsRef.current.n += 1;
+        if (baseFailsRef.current.n === 1) {
+          console.warn('[map]', `basemap ${baseId} failed:`, msg);
+        }
+        if (baseFailsRef.current.n >= OVERLAY_FAIL_THRESHOLD) {
+          baseDeadRef.current.add(baseId);
+          onBaseFailedRef.current?.(baseId, msg);
+        }
+        return;
+      }
+
       console.warn('[map]', msg);
     });
 
@@ -180,6 +271,8 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     if (!map || !ready) return;
     const def = layerById(baseLayerId);
     if (!def || def.kind !== 'base') return;
+    // Reset failure tracking on swap — give the new basemap a clean budget.
+    baseFailsRef.current = { id: baseLayerId, n: 0 };
     const src = map.getSource(`${BASE_PREFIX}src`) as maplibregl.RasterTileSource | undefined;
     if (!src) return;
     // Reset tiles via the private `setTiles` when available; fall back to remove+add.

@@ -80,5 +80,20 @@ export default defineConfig({
     https: httpsConfig,
     // Permit ngrok / cloudflared tunnel hostnames when forwarding to this dev server.
     allowedHosts: ['.ngrok.dev', '.ngrok-free.app', '.trycloudflare.com', '.ngrok.io'],
+    // Dev-time proxies for tile services that don't send CORS headers.
+    // BayernAtlas's vector tile CDN (vt{1,2,3}.bayernwolke.de) is one
+    // such — they serve .pbf tiles without Access-Control-Allow-Origin,
+    // so the browser blocks the response when we fetch directly. Routing
+    // through Vite's dev proxy gives MapLibre a same-origin URL.
+    //
+    // The same problem exists in prod; for that we'll need a Supabase
+    // Edge Function (or Cloudflare Worker) sitting on /bayern-vt that
+    // mirrors this proxy. For now we ship dev-only and document the
+    // production path in bayernVectorStyle.ts.
+    proxy: {
+      '/bayern-vt/1': { target: 'https://vt1.bayernwolke.de', changeOrigin: true, rewrite: (p) => p.replace(/^\/bayern-vt\/1/, '') },
+      '/bayern-vt/2': { target: 'https://vt2.bayernwolke.de', changeOrigin: true, rewrite: (p) => p.replace(/^\/bayern-vt\/2/, '') },
+      '/bayern-vt/3': { target: 'https://vt3.bayernwolke.de', changeOrigin: true, rewrite: (p) => p.replace(/^\/bayern-vt\/3/, '') },
+    },
   },
 });

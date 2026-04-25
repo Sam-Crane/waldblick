@@ -20,11 +20,28 @@ import type { StyleSpecification } from 'maplibre-gl';
 // / Earthy-Brown palette tuned for forestry, deferring per-klasse rules
 // until users tell us specific things they want emphasised.
 
-const TILES = [
-  'https://vt1.bayernwolke.de/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
-  'https://vt2.bayernwolke.de/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
-  'https://vt3.bayernwolke.de/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
-];
+// LDBV's vector tile CDN doesn't send Access-Control-Allow-Origin
+// headers, so direct fetches from a different origin are blocked by
+// the browser's CORS policy. In dev we route through Vite's proxy
+// (vite.config.ts maps /bayern-vt/{1,2,3} → vt{1,2,3}.bayernwolke.de).
+// In production we'd need an equivalent server-side proxy — there
+// isn't one yet, so the vector basemap is dev-only until that lands.
+//
+// Detection: import.meta.env.DEV is true under `vite dev`, false
+// in `vite build`. When false the URLs fall back to direct, which
+// will still CORS-fail; that's the signal to wire a prod proxy.
+const DEV = import.meta.env.DEV;
+const TILES = DEV
+  ? [
+      '/bayern-vt/1/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
+      '/bayern-vt/2/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
+      '/bayern-vt/3/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
+    ]
+  : [
+      'https://vt1.bayernwolke.de/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
+      'https://vt2.bayernwolke.de/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
+      'https://vt3.bayernwolke.de/tiles/web_vektor_by/{z}/{x}/{y}.pbf',
+    ];
 
 const SOURCE_ID = 'bayern-vector';
 

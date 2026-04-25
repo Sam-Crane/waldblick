@@ -146,6 +146,13 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   // Same tracking for the active basemap.
   const baseFailsRef = useRef<{ id: string | null; n: number }>({ id: null, n: 0 });
   const baseDeadRef = useRef<Set<string>>(new Set());
+  // Idempotency guard for the basemap-swap effect. The effect's deps
+  // include `ready`, which toggles false→true after every setStyle.
+  // Without this ref the swap fires twice per change (and triggers
+  // an "isStyleLoaded() === false" race in the reconcile effects that
+  // re-run on the same `ready` flip). We track the last-applied id
+  // here; if it matches the current baseLayerId, skip.
+  const lastAppliedBaseRef = useRef<string | null>(null);
   // Latest callback refs so the long-lived MapLibre `error` listener
   // (set up once at init) reads current values rather than stale closure
   // captures.
@@ -311,10 +318,20 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   //     on top of the new style.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
+    // Skip if we've already applied this basemap. Without this guard
+    // the effect re-fires after every setStyle() (because we toggle
+    // `ready` false→true on style.load) and would kick off a second
+    // identical setStyle, racing the reconcile effects.
+    if (lastAppliedBaseRef.current === baseLayerId) return;
     const def = layerById(baseLayerId);
     if (!def || def.kind !== 'base') return;
     baseFailsRef.current = { id: baseLayerId, n: 0 };
+    lastAppliedBaseRef.current = baseLayerId;
 
     if (def.type === 'vector-style') {
       // setStyle wipes all sources + layers. Mark ourselves not-ready
@@ -384,7 +401,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   // Reconcile overlay layers
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
     const style = map.getStyle();
     const existing = new Set(
       (style?.layers ?? [])
@@ -503,7 +524,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
     if (drawTool === 'idle') return;
 
     // Polygon: tap-to-add. Single click on the map (no drag) appends
@@ -597,7 +622,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   // draw them as a coloured outline + soft fill + corner dots.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
     const srcId = 'draw-progress-src';
     const fillId = 'draw-progress-fill';
     const lineId = 'draw-progress-line';
@@ -712,7 +741,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   // Route line source+layer reconciliation
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
     const srcId = 'route-src';
     const layerId = 'route-layer';
     const casingId = 'route-casing';
@@ -759,7 +792,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   // is heavy (3px) so the boundary stays readable on busy backgrounds.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
     const srcId = 'plots-src';
     const fillId = 'plots-fill';
     const lineId = 'plots-line';
@@ -829,7 +866,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   // Reconcile markers
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
     for (const m of markersRef.current) m.remove();
     if (!showObservations) {
       markersRef.current = [];
@@ -857,7 +898,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   // Machine markers — separate from observations so they can toggle independently
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
     for (const m of machineMarkersRef.current) m.remove();
     if (!showMachines) {
       machineMarkersRef.current = [];
@@ -882,7 +927,11 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
   // transparent at the oldest point to solid at the current position.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !ready) return;
+    // `ready` flips on the initial map.load + on subsequent style.load.
+    // isStyleLoaded() is the imperative check MapLibre itself uses to
+    // gate addSource/addLayer/setData — checking it here makes every
+    // reconcile effect race-free against a setStyle in flight.
+    if (!map || !ready || !map.isStyleLoaded()) return;
     const srcId = 'machine-trails-src';
     const layerId = 'machine-trails-layer';
 

@@ -90,46 +90,61 @@ export default defineConfig({
     // Edge Function (or Cloudflare Worker) sitting on /bayern-vt that
     // mirrors this proxy. For now we ship dev-only and document the
     // production path in bayernVectorStyle.ts.
-    proxy: {
-      // bayernwolke.de uses Referer-based hotlink protection — requests
-      // without a Referer matching atlas.bayern.de get 400 Bad Request
-      // even though the URL is valid. The proxy rewrites Referer + Origin
-      // to spoof a request from the atlas.bayern.de viewer so the
-      // upstream serves the tile. This is dev-only; the same trick will
-      // be needed in the production proxy (Edge Function) when we wire it.
-      '/bayern-vt/1': {
-        target: 'https://vt1.bayernwolke.de',
+    proxy: (() => {
+      // Helper: build identical proxy config for vt1/vt2/vt3 backends.
+      // bayernwolke.de uses some kind of request validation that we
+      // haven't fully mapped — Referer + Origin spoofing alone wasn't
+      // enough. The proxyRes hook below logs the upstream's exact
+      // response (status, headers, first 200 bytes of body) to the Vite
+      // terminal so we can actually see *why* it's rejecting requests
+      // instead of guessing. Once we know, the dev-only spoofing can
+      // be made tighter and ported to the production proxy.
+      const make = (n: 1 | 2 | 3) => ({
+        target: `https://vt${n}.bayernwolke.de`,
         changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/bayern-vt\/1/, ''),
-        configure: (proxy) => {
+        rewrite: (p: string) => p.replace(new RegExp(`^/bayern-vt/${n}`), ''),
+        configure: (proxy: import('http-proxy').Server) => {
           proxy.on('proxyReq', (proxyReq) => {
+            // Spoof headers as if request came from atlas.bayern.de.
             proxyReq.setHeader('Referer', 'https://atlas.bayern.de/');
             proxyReq.setHeader('Origin', 'https://atlas.bayern.de');
+            // Some CDNs reject requests with a "fetch metadata" header
+            // marking them as cross-site. Strip those — same effect as
+            // a non-browser fetch.
+            proxyReq.removeHeader('sec-fetch-site');
+            proxyReq.removeHeader('sec-fetch-mode');
+            proxyReq.removeHeader('sec-fetch-dest');
+            proxyReq.removeHeader('sec-fetch-user');
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            const status = proxyRes.statusCode ?? 0;
+            if (status >= 400) {
+              const chunks: Buffer[] = [];
+              proxyRes.on('data', (chunk: Buffer) => {
+                if (chunks.length < 5) chunks.push(chunk); // cap captured body
+              });
+              proxyRes.on('end', () => {
+                const body = Buffer.concat(chunks).toString('utf8').slice(0, 400);
+                // eslint-disable-next-line no-console
+                console.warn(
+                  `[bayern-vt/${n}] ${status} ${proxyRes.statusMessage} for ${req.url}\n` +
+                    `  response headers: ${JSON.stringify(proxyRes.headers, null, 2)}\n` +
+                    `  body (first 400 chars): ${body || '<empty>'}`,
+                );
+              });
+            }
+          });
+          proxy.on('error', (err, req) => {
+            // eslint-disable-next-line no-console
+            console.warn(`[bayern-vt/${n}] proxy error for ${req.url}:`, err.message);
           });
         },
-      },
-      '/bayern-vt/2': {
-        target: 'https://vt2.bayernwolke.de',
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/bayern-vt\/2/, ''),
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.setHeader('Referer', 'https://atlas.bayern.de/');
-            proxyReq.setHeader('Origin', 'https://atlas.bayern.de');
-          });
-        },
-      },
-      '/bayern-vt/3': {
-        target: 'https://vt3.bayernwolke.de',
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/bayern-vt\/3/, ''),
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.setHeader('Referer', 'https://atlas.bayern.de/');
-            proxyReq.setHeader('Origin', 'https://atlas.bayern.de');
-          });
-        },
-      },
-    },
+      });
+      return {
+        '/bayern-vt/1': make(1),
+        '/bayern-vt/2': make(2),
+        '/bayern-vt/3': make(3),
+      };
+    })(),
   },
 });

@@ -70,6 +70,7 @@
     "broadcastPosition": "Meine Position senden",
     "broadcastHint": "Andere Team-Mitglieder sehen Ihren Standort alle 30 Sekunden.",
     "downloadOnly": "Nur auf Anfrage offline",
+    "minZoom": "Sichtbar ab Zoom {z}+",
     "attributionNote": "Ebenen werden beim Aktivieren von den jeweiligen Diensten geladen. Offline-Verfügbarkeit abhängig vom lokalen Cache."
   },
   "geolocate": {
@@ -401,6 +402,17 @@
     "boundary": "Grenze (GeoJSON)",
     "boundaryHint": "Polygon als GeoJSON-Feature oder rohe Geometrie. Koordinaten in WGS84 (lng, lat).",
     "drawAtGeojsonIo": "Auf geojson.io zeichnen",
+    "draw": {
+      "tapToStart": "Tippen Sie auf die Karte, um Ihre Parzellengrenze einzuzeichnen.",
+      "tapToStartHint": "Laufen Sie die Grenze ab oder zeichnen Sie sie auf dem Satellitenbild nach. Den Namen vergeben Sie am Ende.",
+      "cornersDrawn": "{n} Eckpunkte gesetzt",
+      "minVertices": "Mindestens {min}",
+      "undo": "Zurück",
+      "reset": "Zurücksetzen",
+      "finish": "Fertig",
+      "closedHint": "Polygon geschlossen · {n} Ecken",
+      "continueDrawing": "Ecken bearbeiten"
+    },
     "save": "Parzelle speichern",
     "saving": "Wird gespeichert…",
     "created": "{name} erstellt.",

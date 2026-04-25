@@ -70,6 +70,7 @@
     "broadcastPosition": "Share my position",
     "broadcastHint": "Other team members see your location every 30 seconds.",
     "downloadOnly": "Offline on request only",
+    "minZoom": "Visible from zoom {z}+",
     "attributionNote": "Layers load from their respective services when enabled. Offline availability depends on local cache."
   },
   "geolocate": {
@@ -401,6 +402,17 @@
     "boundary": "Boundary (GeoJSON)",
     "boundaryHint": "Polygon as GeoJSON Feature or raw geometry. Coordinates in WGS84 (lng, lat).",
     "drawAtGeojsonIo": "Draw on geojson.io",
+    "draw": {
+      "tapToStart": "Tap on the map to drop the corners of your plot.",
+      "tapToStartHint": "Walk the boundary, or trace it on the satellite image. You'll name it once you're done.",
+      "cornersDrawn": "{n} corners drawn",
+      "minVertices": "Need at least {min}",
+      "undo": "Undo",
+      "reset": "Reset",
+      "finish": "Finish",
+      "closedHint": "Polygon closed · {n} corners",
+      "continueDrawing": "Edit corners"
+    },
     "save": "Save plot",
     "saving": "Saving…",
     "created": "{name} created.",

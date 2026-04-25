@@ -22,6 +22,11 @@ export type LayerDef = {
   // Use this for features that require a server-side piece (edge function,
   // OAuth) so the UI doesn't advertise layers that can't actually load.
   enabledByEnv?: string;
+  // Minimum zoom at which the WMS server actually renders content. The
+  // BayernAtlas Parzellarkarte, for example, returns blank tiles below
+  // z≈14 by design — the panel shows a hint and the MapLibre layer skips
+  // tile requests below this threshold so the user isn't burning quota.
+  minZoom?: number;
 };
 
 const BAYERN_DTK500 = 'https://geoservices.bayern.de/od/wms/dtk/v1/dtk500';
@@ -67,6 +72,8 @@ export const LAYERS: LayerDef[] = [
     type: 'wms',
     layer: 'by_parzellarkarte',
     attribution: '© LDBV — ALKIS Parzellarkarte',
+    // Cadastre lines only render at street-level zoom on the LDBV WMS.
+    minZoom: 13,
   },
   {
     id: 'overlay-alkis-tn',
@@ -76,6 +83,7 @@ export const LAYERS: LayerDef[] = [
     type: 'wms',
     layer: 'by_tn',
     attribution: '© LDBV — ALKIS Tatsächliche Nutzung',
+    minZoom: 12,
   },
   {
     id: 'overlay-lfu-uebk25',

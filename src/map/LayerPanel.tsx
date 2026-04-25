@@ -96,15 +96,20 @@ export default function LayerPanel({
         </Section>
 
         <Section title={t('mapPanel.overlays')}>
-          {overlays.map((l) => (
-            <Check
-              key={l.id}
-              label={t(l.titleKey)}
-              checked={activeOverlayIds.includes(l.id)}
-              onChange={() => onOverlayToggle(l.id)}
-              hint={attrShort(l) + (l.offlineOnDemand ? ' · ' + t('mapPanel.downloadOnly') : '')}
-            />
-          ))}
+          {overlays.map((l) => {
+            const parts = [attrShort(l)];
+            if (l.minZoom != null) parts.push(t('mapPanel.minZoom', { z: l.minZoom }));
+            if (l.offlineOnDemand) parts.push(t('mapPanel.downloadOnly'));
+            return (
+              <Check
+                key={l.id}
+                label={t(l.titleKey)}
+                checked={activeOverlayIds.includes(l.id)}
+                onChange={() => onOverlayToggle(l.id)}
+                hint={parts.join(' · ')}
+              />
+            );
+          })}
         </Section>
 
         <p className="mt-stack-lg text-label-sm text-outline">{t('mapPanel.attributionNote')}</p>

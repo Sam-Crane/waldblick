@@ -229,12 +229,16 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
         tiles: tilesTemplate(def),
         tileSize: def.tileSize ?? 256,
         attribution: def.attribution,
+        // Don't request WMS tiles below the layer's minZoom — the server
+        // returns blank tiles by design and we'd just waste quota + battery.
+        ...(def.minZoom != null ? { minzoom: def.minZoom } : {}),
       });
       map.addLayer({
         id: layerId,
         type: 'raster',
         source: srcId,
         paint: { 'raster-opacity': 0.8 },
+        ...(def.minZoom != null ? { minzoom: def.minZoom } : {}),
       });
     }
   }, [activeOverlayIds, ready]);
@@ -326,13 +330,18 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
     }
   }, [routeCoords, ready]);
 
-  // Plots GeoJSON layer
+  // Plots GeoJSON layer. The user's hand-drawn plots are surfaced here as
+  // soft fill + crisp outline + a centroid label so the owner can read
+  // "Plot B-14" at a glance even when zoomed out. We keep the fill opacity
+  // low (0.22) so it doesn't drown out the satellite imagery, but the line
+  // is heavy (3px) so the boundary stays readable on busy backgrounds.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
     const srcId = 'plots-src';
     const fillId = 'plots-fill';
     const lineId = 'plots-line';
+    const labelId = 'plots-label';
 
     const collection = {
       type: 'FeatureCollection' as const,
@@ -350,18 +359,45 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
           id: fillId,
           type: 'fill',
           source: srcId,
-          paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.18 },
+          paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.22 },
         });
         map.addLayer({
           id: lineId,
           type: 'line',
           source: srcId,
-          paint: { 'line-color': ['get', 'color'], 'line-width': 2 },
+          paint: {
+            'line-color': ['get', 'color'],
+            'line-width': 3,
+            // White casing via line-blur gives the boundary a soft halo
+            // so it reads against both light and dark satellite tiles.
+            'line-blur': 0.5,
+          },
+        });
+        // Labels render at the centroid of each polygon. MapLibre's
+        // 'symbol-placement': 'point' on a Polygon source automatically
+        // places at the visual centre.
+        map.addLayer({
+          id: labelId,
+          type: 'symbol',
+          source: srcId,
+          layout: {
+            'text-field': ['get', 'name'],
+            'text-size': 13,
+            'text-letter-spacing': 0.05,
+            'text-allow-overlap': false,
+            'text-ignore-placement': false,
+          },
+          paint: {
+            'text-color': '#ffffff',
+            'text-halo-color': ['get', 'color'],
+            'text-halo-width': 2,
+          },
         });
       } else {
         (map.getSource(srcId) as maplibregl.GeoJSONSource).setData(collection);
       }
     } else {
+      if (map.getLayer(labelId)) map.removeLayer(labelId);
       if (map.getLayer(lineId)) map.removeLayer(lineId);
       if (map.getLayer(fillId)) map.removeLayer(fillId);
       if (map.getSource(srcId)) map.removeSource(srcId);

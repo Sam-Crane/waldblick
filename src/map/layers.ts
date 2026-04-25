@@ -56,12 +56,6 @@ const BAYERN_DOP_XYZ =
 const BAYERN_PARZELLAR_XYZ =
   'https://intergeo35.bayernwolke.de/betty/c_g_atkishybrid_alkisinvers_parzellar/{z}/{x}/{y}';
 
-// LfU (soil + hydro) opendata WMS — works against 1.1.1 with EPSG:3857.
-// Kept as opt-in offline-on-demand overlays.
-const LFU_BUEK200 = 'https://www.lfu.bayern.de/gdi/wms/boden/buek200by';
-const LFU_UEBK25 = 'https://www.lfu.bayern.de/gdi/wms/boden/uebk25';
-const LFU_HK100 = 'https://www.lfu.bayern.de/gdi/wms/geologie/hk100';
-
 export const LAYERS: LayerDef[] = [
   {
     id: 'base-satellite',
@@ -127,36 +121,6 @@ export const LAYERS: LayerDef[] = [
     // it's useful, without confusing users by silently disabling
     // the layer when they're slightly zoomed out.
     minZoom: 14,
-  },
-  {
-    id: 'overlay-lfu-uebk25',
-    kind: 'overlay',
-    titleKey: 'map.layer.uebk25',
-    url: LFU_UEBK25,
-    type: 'wms',
-    attribution: '© Bayerisches Landesamt für Umwelt (LfU)',
-    offlineOnDemand: true,
-    wmsVersion: '1.1.1',
-  },
-  {
-    id: 'overlay-lfu-buek200',
-    kind: 'overlay',
-    titleKey: 'map.layer.buek200',
-    url: LFU_BUEK200,
-    type: 'wms',
-    attribution: '© LfU — BÜK200',
-    offlineOnDemand: true,
-    wmsVersion: '1.1.1',
-  },
-  {
-    id: 'overlay-lfu-hk100',
-    kind: 'overlay',
-    titleKey: 'map.layer.hk100',
-    url: LFU_HK100,
-    type: 'wms',
-    attribution: '© LfU — HK100',
-    offlineOnDemand: true,
-    wmsVersion: '1.1.1',
   },
   // Copernicus Sentinel-2 L2A layers. All share the same edge-function
   // endpoint; the LAYERS query param differentiates them. The upstream

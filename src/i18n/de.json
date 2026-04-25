@@ -221,11 +221,6 @@
       "dtk500": "Topo (BayernAtlas)",
       "dok": "Digitale Topo",
       "alkisParzellar": "Parzellarkarte",
-      "alkisTn": "Nutzung (ALKIS)",
-      "inspireCp": "Flurstücke (INSPIRE)",
-      "uebk25": "Bodenkarte 1:25k",
-      "buek200": "Bodenübersicht 1:200k",
-      "hk100": "Hydrogeologie",
       "copernicusTrueColor": "Sentinel-2 (Echtfarbe)",
       "copernicusNdvi": "Sentinel-2 (NDVI · Vegetationsvitalität)",
       "copernicusNdmi": "Sentinel-2 (NDMI · Feuchtigkeit)"

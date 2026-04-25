@@ -1,4 +1,4 @@
-import type { StyleSpecification } from 'maplibre-gl';
+import type { LayerSpecification, StyleSpecification } from 'maplibre-gl';
 
 // BayernAtlas vector basemap.
 //
@@ -33,7 +33,18 @@ const TILE_URLS = [1, 2, 3].map(
   (n) => `${ORIGIN}/bayern-vt/${n}/tiles/web_vektor_by/{z}/{x}/{y}.pbf`,
 );
 const SPRITE_URL = `${ORIGIN}/bayern-vt/1/sprites/sprites_by`;
-const GLYPHS_URL = `${ORIGIN}/bayern-vt/1/fonts/{fontstack}/{range}.pbf`;
+// LDBV's font endpoint is hidden behind the same cookie-too-large 400
+// the rest of bayernwolke serves, AND its fontstack list ('Open Sans
+// Regular,Arial Unicode MS Regular') doesn't actually exist on disk
+// at /fonts/<stack>/0-255.pbf — the upstream returns 404 even with
+// the cookie strip in place. The MapLibre demo glyph server hosts a
+// public Noto Sans Regular set under a CC-BY licence, which is what
+// every MapLibre example/sample style uses. Point glyphs there and
+// rewrite every symbol layer's `text-font` to match (any font name
+// referenced by a layer must exist at that glyph endpoint, otherwise
+// MapLibre falls back to a 404 spam loop).
+const GLYPHS_URL = 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf';
+const FALLBACK_FONT_STACK = ['Noto Sans Regular'];
 
 // LDBV's TileJSON for web_vektor_by declares minzoom 5 / maxzoom 15.
 // We hardcode here so we don't have to do a second fetch — the values
@@ -82,6 +93,23 @@ export async function fetchBayernVectorStyle(): Promise<StyleSpecification> {
   // proxy already handles.
   style.sprite = SPRITE_URL;
   style.glyphs = GLYPHS_URL;
+
+  // Every symbol layer in LDBV's style references the upstream
+  // 'Open Sans Regular,Arial Unicode MS Regular' fontstack, which the
+  // demotiles glyph server doesn't have. Rewrite each layer's
+  // text-font to the one stack we know works — Noto Sans Regular —
+  // so MapLibre stops spraying 404s for every label range.
+  if (Array.isArray(style.layers)) {
+    for (const layer of style.layers as LayerSpecification[]) {
+      if (
+        layer.type === 'symbol' &&
+        layer.layout &&
+        'text-font' in layer.layout
+      ) {
+        layer.layout['text-font'] = FALLBACK_FONT_STACK;
+      }
+    }
+  }
 
   cachedStyle = style;
   return style;

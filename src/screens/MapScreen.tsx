@@ -22,13 +22,13 @@ import { useTranslation } from '@/i18n';
 import { directionsEnabled, fetchRoute, type Route } from '@/map/directions';
 
 // Bumped when defaults change in a way that requires invalidating users'
-// stored layer preferences. v4 swaps the default basemap from Esri
-// satellite to BayernAtlas DOP20 aerial and pre-enables the
-// Parzellarkarte overlay — both via verified intergeo*.bayernwolke.de
-// URLs we extracted from atlas.bayern.de's network tab. Anyone whose
-// localStorage held a v3-era preference would otherwise miss the new
-// "Luftbild + Parzellen" out-of-the-box view.
-const LAYERS_STORAGE_KEY = 'waldblick:map:layers:v4';
+// stored layer preferences. v5 deletes the LfU soil/hydro overlays
+// (overlay-lfu-uebk25/buek200/hk100) that have been broken since day
+// one — no CORS, broken layer names, hammered the upstream with 4xx.
+// Stale localStorage entries pointing at them would otherwise survive
+// the layer removal and just produce console errors with no UI for the
+// user to disable them.
+const LAYERS_STORAGE_KEY = 'waldblick:map:layers:v5';
 
 type StoredLayerState = {
   baseLayerId: string;

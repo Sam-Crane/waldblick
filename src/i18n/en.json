@@ -221,11 +221,6 @@
       "dtk500": "Topo (BayernAtlas)",
       "dok": "Digital Topo",
       "alkisParzellar": "Parcel Map",
-      "alkisTn": "Land Use (ALKIS)",
-      "inspireCp": "Cadastral Parcels (INSPIRE)",
-      "uebk25": "Soil Map 1:25k",
-      "buek200": "Soil Overview 1:200k",
-      "hk100": "Hydrogeology",
       "copernicusTrueColor": "Sentinel-2 (True Color)",
       "copernicusNdvi": "Sentinel-2 (NDVI · vegetation vigor)",
       "copernicusNdmi": "Sentinel-2 (NDMI · moisture)"

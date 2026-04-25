@@ -21,3 +21,4 @@ supabase/.temp/
 # regenerate these directories.
 /ios
 /android
+.gstack/

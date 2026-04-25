@@ -280,9 +280,15 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
         // so the sourceId field is the cheap path.
         '';
       const overlayPrefix = `${OVERLAY_PREFIX}src-`;
-      const isHttp4xx = /4\d\d|status code 4\d\d|Bad Request|Not Found/i.test(msg);
+      // Match 4xx HTTP responses *and* CORS / network-level failures
+      // ("Failed to fetch", "NetworkError"). MapLibre surfaces the
+      // latter when the browser blocks a cross-origin tile request —
+      // they're functionally equivalent to a server error from our
+      // perspective and should auto-disable the overlay just the same.
+      const isFatal =
+        /4\d\d|status code 4\d\d|Bad Request|Not Found|Failed to fetch|NetworkError|CORS/i.test(msg);
 
-      if (sourceId.startsWith(overlayPrefix) && isHttp4xx) {
+      if (sourceId.startsWith(overlayPrefix) && isFatal) {
         const overlayId = sourceId.slice(overlayPrefix.length);
         if (overlayDeadRef.current.has(overlayId)) return; // already given up
         const next = (overlayFailsRef.current.get(overlayId) ?? 0) + 1;
@@ -300,7 +306,7 @@ const MapCanvas = forwardRef<MapCanvasHandle, Props>(function MapCanvas(
       }
 
       // Base layer failure → ask parent to fall back. Same dedupe rules.
-      if (sourceId === `${BASE_PREFIX}src` && isHttp4xx) {
+      if (sourceId === `${BASE_PREFIX}src` && isFatal) {
         const baseId = baseFailsRef.current.id ?? '<unknown>';
         if (baseDeadRef.current.has(baseId)) return;
         baseFailsRef.current.n += 1;
